@@ -1,0 +1,47 @@
+{
+  "name": "travorier-mobile",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "1.21.0",
+    "@react-navigation/native": "^6.1.9",
+    "@supabase/supabase-js": "^2.39.3",
+    "@stripe/stripe-react-native": "^0.35.0",
+    "expo": "~50.0.6",
+    "expo-router": "~3.4.7",
+    "expo-status-bar": "~1.11.1",
+    "expo-camera": "~14.0.5",
+    "expo-image-picker": "~14.7.1",
+    "expo-barcode-scanner": "~12.9.1",
+    "expo-notifications": "~0.27.6",
+    "react": "18.2.0",
+    "react-native": "0.73.4",
+    "react-native-safe-area-context": "4.8.2",
+    "react-native-screens": "~3.29.0",
+    "react-native-url-polyfill": "^2.0.0",
+    "react-native-svg": "14.1.0",
+    "zustand": "^4.5.0",
+    "react-native-qrcode-svg": "^6.3.0",
+    "axios": "^1.6.7"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.9",
+    "@types/react": "~18.2.55",
+    "@types/react-native": "^0.73.0",
+    "@typescript-eslint/eslint-plugin": "^6.20.0",
+    "@typescript-eslint/parser": "^6.20.0",
+    "eslint": "^8.56.0",
+    "eslint-config-expo": "^7.0.0",
+    "prettier": "^3.2.5",
+    "typescript": "^5.3.3"
+  },
+  "private": true
+}
