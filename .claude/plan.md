@@ -258,18 +258,20 @@ app.include_router(auth_router, prefix=settings.API_V1_PREFIX, tags=["auth"])
 
 ---
 
-### Phase 1.7: Test Milestone 1 (15 min) ⏳ NEXT
+### Phase 1.7: Test Milestone 1 (15 min) ⏳ IN PROGRESS
 
 **Test Steps:**
-1. Start backend: `cd backend && source venv/bin/activate && uvicorn app.main:app --reload`
-2. Start mobile: `cd mobile && npm start`
-3. Open app in Expo Go or web
-4. Verify login screen appears
-5. Tap "Sign in with Google"
-6. Complete Google OAuth flow
-7. Verify redirect to homepage (will be blank for now)
-8. Check backend logs for successful profile creation
-9. Verify user in Supabase profiles table
+1. ✅ Start backend: `cd backend && source venv/bin/activate && uvicorn app.main:app --reload`
+2. ✅ Start mobile: `cd mobile && npm start --web`
+3. ✅ Open app in web browser
+4. ✅ Verify login screen appears
+5. ⏳ Tap "Sign in with Google" - IN PROGRESS
+6. ⏳ Complete Google OAuth flow - User at consent screen
+7. ⏳ Verify redirect to homepage
+8. ⏳ Check backend logs for successful profile creation
+9. ⏳ Verify user in Supabase profiles table
+
+**Current Status**: User testing OAuth consent screen, waiting for Continue click
 
 **Success Criteria:**
 - ✅ Login screen displays correctly
