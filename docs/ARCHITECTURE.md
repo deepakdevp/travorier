@@ -448,6 +448,8 @@ CREATE INDEX idx_notifications_type ON public.notifications(notification_type);
 
 ## API Architecture
 
+For complete API endpoint specifications, request/response schemas, authentication details, error codes, and code examples, see **[API.md](./API.md)**.
+
 ### Backend Structure (FastAPI)
 
 ```
@@ -485,79 +487,6 @@ backend/
 │       └── helpers.py
 ├── requirements.txt
 └── vercel.json                 # Vercel deployment config
-```
-
-### Key API Endpoints
-
-#### Authentication
-```
-POST   /api/v1/auth/signup              # Create account
-POST   /api/v1/auth/login               # Email/password login
-POST   /api/v1/auth/google              # Google OAuth callback
-POST   /api/v1/auth/otp/send            # Send OTP to phone
-POST   /api/v1/auth/otp/verify          # Verify OTP code
-GET    /api/v1/auth/me                  # Get current user
-```
-
-#### Users
-```
-GET    /api/v1/users/{id}               # Get user profile
-PATCH  /api/v1/users/{id}               # Update profile
-POST   /api/v1/users/verification/id    # Submit ID for verification
-GET    /api/v1/users/{id}/reviews       # Get user reviews
-GET    /api/v1/users/{id}/stats         # Trust score, deliveries
-```
-
-#### Trips
-```
-POST   /api/v1/trips                    # Create trip
-GET    /api/v1/trips                    # Search trips (with filters)
-GET    /api/v1/trips/{id}               # Get trip details
-PATCH  /api/v1/trips/{id}               # Update trip
-DELETE /api/v1/trips/{id}               # Cancel trip
-POST   /api/v1/trips/{id}/verify-pnr    # Upload boarding pass
-POST   /api/v1/trips/{id}/boost         # Boost trip (₹199)
-```
-
-#### Requests
-```
-POST   /api/v1/requests                 # Create request
-GET    /api/v1/requests                 # Search requests
-GET    /api/v1/requests/{id}            # Get request details
-PATCH  /api/v1/requests/{id}            # Update request
-DELETE /api/v1/requests/{id}            # Cancel request
-```
-
-#### Matches
-```
-POST   /api/v1/matches                  # Create match
-GET    /api/v1/matches                  # List user's matches
-GET    /api/v1/matches/{id}             # Get match details
-POST   /api/v1/matches/{id}/unlock      # Pay ₹99 to unlock contact
-PATCH  /api/v1/matches/{id}             # Update match status
-POST   /api/v1/matches/{id}/qr          # Generate delivery QR
-POST   /api/v1/matches/{id}/scan-qr     # Verify QR and complete
-```
-
-#### Inspections
-```
-POST   /api/v1/inspections              # Upload inspection media
-GET    /api/v1/inspections/{match_id}   # Get inspection evidence
-```
-
-#### Payments
-```
-POST   /api/v1/payments/create-intent   # Create Stripe payment intent
-POST   /api/v1/payments/webhook         # Stripe webhook handler
-GET    /api/v1/payments/credits         # Get user credits
-POST   /api/v1/payments/buy-credits     # Purchase credit pack
-GET    /api/v1/payments/transactions    # Transaction history
-```
-
-#### Reviews
-```
-POST   /api/v1/reviews                  # Submit review
-GET    /api/v1/reviews/{user_id}        # Get user reviews
 ```
 
 ---
