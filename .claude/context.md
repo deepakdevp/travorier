@@ -1,9 +1,50 @@
 # Travorier - Claude Context
 
 > **Last Updated**: February 16, 2026
-> **Current Phase**: Week 1 - Foundation (Day 2)
+> **Current Phase**: Week 1 - Authentication (Day 2-3)
+> **Current Milestone**: Milestone 1 - Visual Authentication (In Progress)
 > **Developer**: Solo full-stack (Deepak Panwar)
 > **Timeline**: 12 weeks to MVP
+
+---
+
+## 📋 Important References
+
+**ALWAYS refer to these files when working on Travorier:**
+
+1. **[.claude/plan.md](.claude/plan.md)** - Current development plan with milestones and phases
+   - Check this FIRST to understand what you're building
+   - Update status after completing each phase/milestone
+
+2. **[.claude/commit.md](.claude/commit.md)** - Git commit conventions
+   - **CRITICAL**: Commit after EVERY minor or major task completion
+   - Follow Conventional Commits format: `<type>(<scope>): <description>`
+   - Reference plan phase/milestone in commit body
+
+3. **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture and database schema
+
+4. **[docs/API.md](docs/API.md)** - API endpoint specifications
+
+5. **[docs/PRD.md](docs/PRD.md)** - Product requirements
+
+---
+
+## 🔄 Development Workflow
+
+### After Every Task:
+1. ✅ **Complete the task** (file created/updated and working)
+2. ✅ **Test locally** (verify it works as expected)
+3. ✅ **Stage changes**: `git add <files>`
+4. ✅ **Commit**: `git commit -m "type(scope): description"` (see commit.md)
+5. ✅ **Update plan.md** status if phase/milestone complete
+6. ✅ **Continue** to next task or push to remote
+
+### Commit Frequency:
+- After **every file creation/update** that works
+- After **every phase completion**
+- After **every milestone completion**
+- Before **switching between backend ↔ mobile work**
+- **Every 15-30 minutes** during active development
 
 ---
 
@@ -72,31 +113,34 @@
 
 ## Current Development Phase
 
-### Week 1 Progress (Days 1-2)
+### Week 1 Progress (Days 2-3)
 
-**✅ Completed**:
-- [x] Git repository initialized
-- [x] GitHub repository created and pushed
-- [x] Complete project documentation (README, ARCHITECTURE, PRD, API, TESTING, ACCOUNTS_AND_KEYS, GIT_WORKFLOW, GETTING_STARTED)
-- [x] Database schema designed (10 tables with RLS policies)
-- [x] Backend boilerplate created (FastAPI with core structure)
-- [x] Mobile app initialized (React Native Expo with navigation)
-- [x] Supabase migration file ready
+**✅ Infrastructure Completed (Days 1-2)**:
+- [x] Git repository initialized and pushed to GitHub
+- [x] Complete project documentation (9 docs totaling 7,000+ lines)
+- [x] Database schema with 10 tables + RLS policies deployed to Supabase
+- [x] Backend FastAPI boilerplate with all dependencies installed
+- [x] Mobile React Native (Expo) boilerplate with npm packages installed
+- [x] Supabase project created and connection verified
+- [x] Google OAuth configured in Supabase and Google Cloud
+- [x] Environment variables configured (.env files)
+- [x] Development plan created (plan.md)
+- [x] Git commit conventions documented (commit.md)
 
-**🔄 In Progress**:
-- [ ] Creating .claude/ directory documentation
-- [ ] Setting up external service accounts (Supabase, Stripe, Firebase, etc.)
+**🔄 Currently Working On: Milestone 1 - Visual Authentication**:
+- [ ] Phase 1.1: Create mobile login screen UI (30 min)
+- [ ] Phase 1.2: Add Google OAuth method to auth store (20 min)
+- [ ] Phase 1.3: Enable navigation logic (10 min)
+- [ ] Phase 1.4: Create backend auth schemas (15 min)
+- [ ] Phase 1.5: Implement Google OAuth endpoint (30 min)
+- [ ] Phase 1.6: Enable auth routes (5 min)
+- [ ] Phase 1.7: Test end-to-end authentication (15 min)
 
-**⏳ Next Up (Days 3-7)**:
-- [ ] Create Supabase account and project
-- [ ] Run database migration
-- [ ] Configure Google OAuth and Phone OTP
-- [ ] Set up Stripe account (test mode)
-- [ ] Set up Firebase FCM
-- [ ] Deploy backend to Vercel
-- [ ] Implement authentication flow (backend + mobile)
-- [ ] Build login/signup UI
-- [ ] Test end-to-end authentication
+**⏳ Next Milestones (Days 3-7)**:
+- Milestone 2: Homepage & Navigation (2.5 hours)
+- Milestone 3: Traveler Journey - Browse & Match (4 hours)
+- Milestone 4: Sender Journey - Post & Match (3.5 hours)
+- Milestone 5: Profile & Settings (2 hours)
 
 ---
 
