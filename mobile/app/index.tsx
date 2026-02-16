@@ -16,10 +16,10 @@ export default function Index() {
     // Navigate based on auth state
     if (session) {
       // User is authenticated - go to main app
-      // router.replace('/(tabs)');
+      router.replace('/(tabs)');
     } else {
       // User is not authenticated - go to auth flow
-      // router.replace('/(auth)/login');
+      router.replace('/(auth)/login');
     }
   }, [session, loading, initialized]);
 
