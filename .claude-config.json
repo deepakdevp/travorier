@@ -1,0 +1,336 @@
+{
+  "projectInfo": {
+    "name": "Travorier",
+    "description": "Crowdsourced logistics platform connecting travelers with package senders",
+    "version": "0.1.0",
+    "repository": "https://github.com/deepakdevp/travorier",
+    "developer": "Deepak Panwar (Solo full-stack)",
+    "timeline": "12 weeks to MVP (Week 1, Day 2 as of 2026-02-16)",
+    "targetLaunch": "2026-05-01"
+  },
+
+  "context": {
+    "primaryDocs": [
+      ".claude/context.md",
+      "docs/ARCHITECTURE.md",
+      "docs/API.md",
+      "docs/PRD.md"
+    ],
+    "decisionLog": ".claude/decisions.md",
+    "promptsLibrary": ".claude/prompts.md",
+    "testingStrategy": "docs/TESTING.md",
+    "setupGuides": [
+      "docs/GETTING_STARTED.md",
+      "docs/ACCOUNTS_AND_KEYS.md"
+    ]
+  },
+
+  "development": {
+    "workingDirectory": "/Users/deepak.panwar/personal/travorier",
+    "structure": {
+      "backend": {
+        "path": "backend/",
+        "framework": "FastAPI (Python 3.11+)",
+        "deployment": "Vercel (serverless)",
+        "entrypoint": "backend/app/main.py",
+        "tests": "backend/tests/",
+        "dependencies": "backend/requirements.txt"
+      },
+      "mobile": {
+        "path": "mobile/",
+        "framework": "React Native (Expo SDK 50)",
+        "language": "TypeScript",
+        "navigation": "Expo Router (file-based)",
+        "stateManagement": "Zustand",
+        "tests": "mobile/__tests__/"
+      },
+      "database": {
+        "path": "supabase/",
+        "migrations": "supabase/migrations/",
+        "provider": "Supabase (PostgreSQL 15)",
+        "tables": 10
+      },
+      "docs": {
+        "path": "docs/",
+        "files": [
+          "README.md",
+          "ARCHITECTURE.md",
+          "PRD.md",
+          "API.md",
+          "TESTING.md",
+          "ACCOUNTS_AND_KEYS.md",
+          "GIT_WORKFLOW.md",
+          "GETTING_STARTED.md"
+        ]
+      }
+    }
+  },
+
+  "architecture": {
+    "techStack": {
+      "frontend": "React Native (Expo), TypeScript, Zustand",
+      "backend": "FastAPI (Python 3.11+), Pydantic",
+      "database": "Supabase (PostgreSQL 15 + Auth + Storage + Realtime)",
+      "payments": "Stripe",
+      "notifications": "Firebase Cloud Messaging (FCM)",
+      "deployment": {
+        "backend": "Vercel (serverless)",
+        "mobile": "Expo EAS Build (future)"
+      }
+    },
+    "databaseSchema": {
+      "tables": [
+        "profiles",
+        "trips",
+        "requests",
+        "matches",
+        "messages",
+        "inspections",
+        "transactions",
+        "credits",
+        "reviews",
+        "notifications"
+      ],
+      "keyFeatures": [
+        "Row-Level Security (RLS) on all tables",
+        "Automated triggers (trust score calculation)",
+        "Real-time subscriptions (chat messages)"
+      ]
+    },
+    "authentication": {
+      "provider": "Supabase Auth",
+      "methods": ["Google OAuth", "Phone OTP"],
+      "tokenType": "JWT (1-hour expiry, auto-refresh)"
+    },
+    "authorization": {
+      "method": "Row-Level Security (RLS)",
+      "enforcement": "Database-level (PostgreSQL policies)",
+      "principle": "Defense in depth"
+    }
+  },
+
+  "filePatterns": {
+    "backend": {
+      "apiRoutes": "backend/app/api/v1/*.py",
+      "schemas": "backend/app/schemas/*.py",
+      "services": "backend/app/services/*.py",
+      "core": "backend/app/core/*.py",
+      "tests": "backend/tests/test_*.py"
+    },
+    "mobile": {
+      "screens": "mobile/app/**/*.tsx",
+      "components": "mobile/components/**/*.tsx",
+      "services": "mobile/services/*.ts",
+      "stores": "mobile/stores/*.ts",
+      "types": "mobile/types/*.ts"
+    },
+    "database": {
+      "migrations": "supabase/migrations/*.sql"
+    },
+    "docs": {
+      "markdown": "docs/*.md",
+      "claude": ".claude/*.md"
+    }
+  },
+
+  "codeConventions": {
+    "git": {
+      "commitFormat": "Conventional Commits",
+      "types": ["feat", "fix", "docs", "refactor", "test", "chore", "perf", "style"],
+      "exampleCommit": "feat(auth): implement Google OAuth signup",
+      "branchStrategy": "Main branch only for MVP, feature branches post-MVP"
+    },
+    "python": {
+      "formatter": "Black (line length: 100)",
+      "linter": "Flake8",
+      "typeHints": "Required for public functions",
+      "docstrings": "Google style (optional for MVP)",
+      "naming": {
+        "files": "snake_case",
+        "classes": "PascalCase",
+        "functions": "snake_case",
+        "constants": "UPPER_SNAKE_CASE"
+      }
+    },
+    "typescript": {
+      "formatter": "Prettier",
+      "linter": "ESLint (Expo defaults)",
+      "strict": true,
+      "naming": {
+        "files": "kebab-case or PascalCase (components)",
+        "components": "PascalCase",
+        "functions": "camelCase",
+        "constants": "UPPER_SNAKE_CASE",
+        "types": "PascalCase"
+      }
+    },
+    "sql": {
+      "tableName": "snake_case (lowercase, plural)",
+      "columnName": "snake_case (lowercase)",
+      "policyName": "descriptive with quotes (e.g., 'Users can view their own profile')"
+    }
+  },
+
+  "customInstructions": [
+    "Always read .claude/context.md first for project understanding",
+    "Check .claude/decisions.md before making architectural decisions",
+    "Use prompts from .claude/prompts.md for common tasks",
+    "Follow conventions in docs/GIT_WORKFLOW.md for commits",
+    "Reference docs/API.md for API endpoint specifications",
+    "Reference docs/ARCHITECTURE.md for database schema and system design",
+    "Reference docs/TESTING.md for testing approach and test cases",
+    "For new features, always check if a similar implementation exists",
+    "Never commit secrets (.env files, API keys, firebase-credentials.json)",
+    "Always include error handling in API endpoints and service functions",
+    "Always validate user input (Pydantic for backend, Yup/Zod for mobile)",
+    "Always enforce authorization with RLS policies (not application-level checks)",
+    "Test on both iOS and Android before marking mobile features complete",
+    "Document new API endpoints in docs/API.md",
+    "Update .claude/context.md when project phase changes"
+  ],
+
+  "mvpConstraints": [
+    "Bootstrap budget: ₹876/month (MVP: ₹167/month)",
+    "Timeline: 12 weeks to MVP",
+    "Solo developer (no team)",
+    "Manual verification (no automated KYC for MVP)",
+    "Manual PNR verification (no flight API for MVP)",
+    "Manual testing (no automated tests for MVP, add post-MVP)",
+    "Android-first (defer iOS to post-MVP to avoid Apple Developer cost)",
+    "Use free tiers: Supabase, Vercel, Firebase, Stripe test mode",
+    "No custom domain for MVP (use free Vercel subdomain)",
+    "No WhatsApp Business API (use FCM push notifications only)"
+  ],
+
+  "commonTasks": {
+    "startBackend": "cd backend && source venv/bin/activate && uvicorn app.main:app --reload",
+    "startMobile": "cd mobile && npm start",
+    "testBackend": "cd backend && pytest",
+    "testMobile": "cd mobile && npm test",
+    "databaseMigration": "supabase db push (or run SQL in Supabase Dashboard)",
+    "deploy": "git push origin main (Vercel auto-deploys backend)",
+    "viewLogs": {
+      "backend": "Check Vercel Dashboard → Logs",
+      "mobile": "Check Expo Go app console",
+      "database": "Supabase Dashboard → Database → Query Editor"
+    }
+  },
+
+  "keyDecisions": [
+    "ADR-001: Use Supabase (not custom PostgreSQL + Auth) for time savings and cost",
+    "ADR-002: Manual verification (not automated KYC) to save ₹5-10k/month",
+    "ADR-003: Credit-based unlock (not subscription) for pay-per-value model",
+    "ADR-004: Offline P2P payment (no escrow) to avoid courier regulations",
+    "ADR-005: React Native Expo (not native) for single codebase",
+    "ADR-006: FastAPI (not Django/Flask) for async performance and type safety",
+    "ADR-007: Row-Level Security for database-level authorization",
+    "ADR-008: 24-hour chat auto-lock post-flight for safety",
+    "ADR-009: QR code delivery confirmation (not manual button) for fraud prevention",
+    "ADR-010: Stripe (not Razorpay) for developer experience and international scalability"
+  ],
+
+  "referenceLinks": {
+    "supabase": {
+      "docs": "https://supabase.com/docs",
+      "auth": "https://supabase.com/docs/guides/auth",
+      "rls": "https://supabase.com/docs/guides/auth/row-level-security",
+      "realtime": "https://supabase.com/docs/guides/realtime"
+    },
+    "stripe": {
+      "docs": "https://stripe.com/docs",
+      "testing": "https://stripe.com/docs/testing",
+      "webhooks": "https://stripe.com/docs/webhooks"
+    },
+    "fastapi": {
+      "docs": "https://fastapi.tiangolo.com",
+      "tutorial": "https://fastapi.tiangolo.com/tutorial"
+    },
+    "expo": {
+      "docs": "https://docs.expo.dev",
+      "router": "https://docs.expo.dev/router/introduction"
+    },
+    "firebase": {
+      "fcm": "https://firebase.google.com/docs/cloud-messaging"
+    }
+  },
+
+  "aiAssistancePreferences": {
+    "codeGeneration": {
+      "style": "Follow existing patterns in codebase",
+      "comments": "Add comments only for complex logic (not obvious code)",
+      "errorHandling": "Always include try-catch and user-friendly error messages",
+      "validation": "Always validate input (Pydantic for backend, Yup for mobile)",
+      "testing": "Suggest test cases but don't generate tests for MVP (manual testing)"
+    },
+    "documentation": {
+      "apiEndpoints": "Follow docs/API.md format (request/response schemas, error codes, examples)",
+      "architecture": "Update docs/ARCHITECTURE.md when adding new tables or major features",
+      "decisions": "Document architectural decisions in .claude/decisions.md",
+      "codeComments": "Google-style docstrings for Python, JSDoc for TypeScript (optional for MVP)"
+    },
+    "problemSolving": {
+      "approach": "Research existing code first, then propose solution",
+      "alternatives": "Present 2-3 options with trade-offs when applicable",
+      "constraints": "Always consider bootstrap budget and 12-week timeline",
+      "mvpFirst": "Prioritize MVP features, defer nice-to-haves to post-MVP"
+    }
+  },
+
+  "securityReminders": [
+    "Never commit .env files (backend/.env, mobile/.env)",
+    "Never commit firebase-credentials.json",
+    "Never commit *.keystore files (Android signing keys)",
+    "Use service_role key ONLY in backend (never in mobile app)",
+    "Use anon key in mobile app (enforces RLS policies)",
+    "Verify Stripe webhook signatures (prevent fraud)",
+    "Enable RLS on all tables (enforce authorization at database level)",
+    "Validate all user input (prevent SQL injection, XSS)",
+    "Use HTTPS for all API endpoints (Vercel provides free SSL)",
+    "Rotate API keys every 90 days (GitHub tokens, Stripe keys)"
+  ],
+
+  "weeklyMilestones": {
+    "week1": {
+      "title": "Foundation & Authentication",
+      "tasks": [
+        "Create external service accounts (Supabase, Stripe, Firebase)",
+        "Run database migration",
+        "Deploy backend to Vercel",
+        "Implement Google OAuth + Phone OTP (backend)",
+        "Build login/signup UI (mobile)",
+        "Test end-to-end authentication"
+      ],
+      "deliverable": "Users can sign up and log in"
+    },
+    "week2": {
+      "title": "Trip Management",
+      "tasks": [
+        "Implement trip CRUD API endpoints",
+        "Build trip creation UI (travelers)",
+        "Build trip search UI (senders)",
+        "Add filters (route, date, price, weight)",
+        "Implement trip listing cards"
+      ],
+      "deliverable": "Travelers can post trips, senders can search"
+    },
+    "week3": {
+      "title": "Request Management & Matching",
+      "tasks": [
+        "Implement request CRUD API endpoints",
+        "Build request creation UI (senders)",
+        "Build match creation logic",
+        "Implement match listing UI"
+      ],
+      "deliverable": "Senders can post requests, matches are created"
+    }
+  },
+
+  "troubleshootingGuide": {
+    "supabaseConnectionError": "Check SUPABASE_URL has https:// prefix, verify API keys are correct, ensure RLS policies are set",
+    "stripeWebhookNotWorking": "Verify webhook URL is correct and accessible, check signing secret matches, ensure endpoint uses HTTPS",
+    "firebasePushNotSending": "Check server key is correct, verify device token is valid, ensure FCM is enabled in Firebase console",
+    "expoAppNotLoading": "Run 'npx expo start --clear' to clear cache, check .env file exists with correct values",
+    "fastApiImportError": "Activate virtual environment: 'source venv/bin/activate', reinstall dependencies: 'pip install -r requirements.txt'",
+    "rlsPolicyDenied": "Check if user is authenticated (JWT token present), verify RLS policy allows the operation, test with SQL Editor using 'set local role authenticated'"
+  }
+}
