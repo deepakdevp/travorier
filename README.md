@@ -2,11 +2,14 @@
 
 Crowdsourced logistics platform connecting travelers with package senders.
 
+**Repository**: [https://github.com/deepakdevp/travorier](https://github.com/deepakdevp/travorier)
+
 ## Quick Links
 
 - [Documentation](./docs/README.md)
 - [Architecture](./docs/ARCHITECTURE.md)
 - [Git Workflow](./docs/GIT_WORKFLOW.md)
+- [Getting Started](./docs/GETTING_STARTED.md)
 
 ## Project Structure
 
@@ -27,9 +30,18 @@ travorier/
 - **Payments**: Stripe
 - **Notifications**: Firebase FCM
 
-## Setup
+## Quick Start
 
-See [Documentation](./docs/README.md) for detailed setup instructions.
+```bash
+# Clone repository
+git clone https://github.com/deepakdevp/travorier.git
+cd travorier
+
+# See detailed setup instructions
+cat docs/GETTING_STARTED.md
+```
+
+For complete setup guide, see [Getting Started](./docs/GETTING_STARTED.md).
 
 ## Development Timeline
 
