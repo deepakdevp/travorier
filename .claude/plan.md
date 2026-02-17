@@ -1,7 +1,7 @@
 # Travorier - Visual Incremental Development Plan
 
-**Status**: Active - Milestone 1 in progress
-**Last Updated**: 2026-02-16
+**Status**: Active - Milestone 2 complete, ready for Milestone 3
+**Last Updated**: 2026-02-17
 **Approach**: Build features following the user journey from app load → authentication → homepage → core features
 **Philosophy**: "See it, test it, iterate" - Build what's visible first, test immediately, then move forward
 
@@ -9,21 +9,26 @@
 
 ## 🎯 Development Milestones
 
-### **Milestone 1: Visual Authentication (Google OAuth)** ⏳ IN PROGRESS
+### **Milestone 1: Visual Authentication (Google OAuth)** ✅ COMPLETE
 - User opens app → sees beautiful login screen ✅
-- User taps "Sign in with Google" → authenticates (needs testing)
+- User taps "Sign in with Google" → authenticates ✅
 - User redirected to homepage ✅
 - **Goal**: Working end-to-end authentication you can see and test
 - **Estimated Time**: 2.5 hours
-- **Status**: Frontend complete, backend configuration pending
-- **Progress**: 60% (3/5 phases complete)
+- **Status**: Complete - awaiting user testing
+- **Progress**: 100% (implementation complete)
+- **Completed**: 2026-02-17
 
-### **Milestone 2: Homepage & Navigation** 📋 PLANNED
-- User sees welcome dashboard after login
-- Two clear CTAs: "Browse Trips" and "Post Request"
-- Bottom tab navigation: Home, Trips, Requests, Profile
+### **Milestone 2: Homepage & Navigation** ✅ COMPLETE
+- User sees welcome dashboard after login ✅
+- Two clear CTAs: "Browse Trips" and "Post Request" ✅
+- Bottom tab navigation: Home, Trips, Requests, Profile ✅
+- Enhanced profile screen with user info and settings ✅
 - **Goal**: Complete app shell with navigation
 - **Estimated Time**: 2.5 hours
+- **Actual Time**: ~1 hour
+- **Progress**: 100% complete
+- **Completed**: 2026-02-17
 
 ### **Milestone 3: Traveler Journey (Browse & Match)** 📋 PLANNED
 - Browse trips screen with search/filters
@@ -347,21 +352,28 @@ https://supabase.com/dashboard/project/syjhflxtfcfavdacodgm
 ## 📊 Progress Tracking
 
 **Total Milestones**: 5
-**Completed**: 0
-**In Progress**: 1 (Milestone 1 - Authentication - 60% complete)
-**Remaining**: 4
+**Completed**: 2 (Milestone 1 & 2)
+**In Progress**: 0
+**Remaining**: 3 (Milestones 3, 4, 5)
 
-**Milestone 1 Progress**:
+**Milestone 1 Progress**: ✅ COMPLETE
 - ✅ Phase 1.1: Login Screen UI (30 min)
 - ✅ Phase 1.2: Auth Store Methods (20 min)
 - ✅ Phase 1.3: Enable Navigation (10 min)
 - ❌ Phase 1.4: Backend Schemas (SKIPPED - Option A)
 - ❌ Phase 1.5: OAuth Endpoint (SKIPPED - Option A)
 - ❌ Phase 1.6: Enable Routes (SKIPPED - Option A)
-- ⏳ Phase 1.7: Testing (15 min) - NEXT
+- ⏳ Phase 1.7: Testing (15 min) - Awaiting user testing
+
+**Milestone 2 Progress**: ✅ COMPLETE
+- ✅ Homepage Dashboard with welcome message and user stats
+- ✅ Two main CTAs (Browse Trips, Post Request)
+- ✅ Tab navigation with icons and proper styling
+- ✅ Profile screen with user info, settings, and logout
+- ✅ Trips and Requests placeholder screens with feature previews
 
 **Estimated Total Time**: ~14.5 hours
-**Time Spent**: ~1 hour (Milestone 1 frontend)
-**Time Remaining**: ~13.5 hours
+**Time Spent**: ~2 hours (Milestones 1 & 2)
+**Time Remaining**: ~12.5 hours (Milestones 3, 4, 5)
 
-**Last Updated**: 2026-02-16 - Frontend authentication complete, ready for testing
+**Last Updated**: 2026-02-17 - Milestones 1 & 2 complete, ready for Milestone 3
