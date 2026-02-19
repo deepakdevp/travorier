@@ -34,6 +34,7 @@ export default function ChatScreen() {
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -65,18 +66,26 @@ export default function ChatScreen() {
 
   const loadMessageHistory = async () => {
     setLoadingHistory(true);
-    const { data, error } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('match_id', matchId)
-      .order('created_at', { ascending: true });
+    setLoadError(false);
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('match_id', matchId)
+        .order('created_at', { ascending: true });
 
-    if (error) {
-      console.error('Error loading messages:', error);
-    } else {
-      setMessages(data ?? []);
+      if (error) {
+        console.error('Error loading messages:', error);
+        setLoadError(true);
+      } else {
+        setMessages(data ?? []);
+      }
+    } catch (err) {
+      console.error('Error loading messages:', err);
+      setLoadError(true);
+    } finally {
+      setLoadingHistory(false);
     }
-    setLoadingHistory(false);
   };
 
   const subscribeToMessages = () => {
@@ -106,23 +115,28 @@ export default function ChatScreen() {
 
   const sendMessage = async () => {
     const content = inputText.trim();
-    if (!content || sending || isChatLocked) return;
+    if (!content || sending || isChatLocked || !user) return;
 
     setSending(true);
     setInputText('');
 
-    const { error } = await supabase.from('messages').insert({
-      match_id: matchId,
-      sender_id: currentUserId,
-      content,
-    });
+    try {
+      const { error } = await supabase.from('messages').insert({
+        match_id: matchId,
+        sender_id: currentUserId,
+        content,
+      });
 
-    if (error) {
+      if (error) {
+        Alert.alert('Error', 'Failed to send message. Please try again.');
+        setInputText(content);
+      }
+    } catch {
       Alert.alert('Error', 'Failed to send message. Please try again.');
       setInputText(content);
+    } finally {
+      setSending(false);
     }
-
-    setSending(false);
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
@@ -215,6 +229,20 @@ export default function ChatScreen() {
             Loading messages...
           </Text>
         </View>
+      ) : loadError ? (
+        <View style={styles.loadingContainer}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={48} color="#cccccc" />
+          <Text variant="bodyMedium" style={styles.loadingText}>
+            Failed to load messages
+          </Text>
+          <Text
+            variant="bodySmall"
+            style={[styles.loadingText, { color: '#0066cc', marginTop: 8 }]}
+            onPress={loadMessageHistory}
+          >
+            Tap to retry
+          </Text>
+        </View>
       ) : (
         <FlatList
           ref={flatListRef}
@@ -249,7 +277,7 @@ export default function ChatScreen() {
           right={
             <TextInput.Icon
               icon="send"
-              disabled={!inputText.trim() || sending || isChatLocked}
+              disabled={!inputText.trim() || sending || isChatLocked || !user}
               onPress={sendMessage}
               color={inputText.trim() && !isChatLocked ? '#0066cc' : '#cccccc'}
             />
