@@ -15,9 +15,26 @@ import {
   Portal,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useRequestsStore, Match } from '@/stores/requestsStore';
+import { useCreditStore } from '@/stores/creditStore';
+
+const STATUS_BG: Record<string, string> = {
+  open: '#E8F5E9',
+  matched: '#E3F2FD',
+  completed: '#F5F5F5',
+};
+const STATUS_FG: Record<string, string> = {
+  open: '#2E7D32',
+  matched: '#1976D2',
+  completed: '#666666',
+};
+const STATUS_LABEL: Record<string, string> = {
+  open: 'Open',
+  matched: 'Matched',
+  completed: 'Completed',
+};
 
 function MatchCard({
   match,
@@ -67,7 +84,7 @@ function MatchCard({
         <View style={styles.flightRow}>
           <MaterialCommunityIcons name="airplane" size={16} color="#666666" />
           <Text variant="bodySmall" style={styles.flightText}>
-            {match.trip.airline} {match.trip.flight_number} ·{' '}
+            {match.trip.airline ?? ''} {match.trip.flight_number ?? ''} ·{' '}
             {new Date(match.trip.departure_date).toLocaleDateString('en-IN', {
               day: 'numeric',
               month: 'short',
@@ -94,12 +111,18 @@ export default function RequestDetailScreen() {
   const router = useRouter();
   const { selectedRequest, setSelectedMatch, unlockContact, getMatchesForRequest } =
     useRequestsStore();
+  const { balance } = useCreditStore();
   const [unlockModalVisible, setUnlockModalVisible] = useState(false);
   const [pendingMatch, setPendingMatch] = useState<Match | null>(null);
   const [unlocking, setUnlocking] = useState(false);
 
+  useEffect(() => {
+    if (!selectedRequest) {
+      router.back();
+    }
+  }, [selectedRequest]);
+
   if (!selectedRequest) {
-    router.back();
     return null;
   }
 
@@ -132,119 +155,114 @@ export default function RequestDetailScreen() {
   };
 
   return (
-    <Portal.Host>
-      <View style={styles.container}>
-        <ScrollView style={styles.scrollView}>
-          {/* Request Summary */}
-          <Surface style={styles.header} elevation={2}>
-            <View style={styles.routeRow}>
-              <View style={styles.cityBlock}>
-                <Text variant="headlineSmall" style={styles.cityText}>
-                  {request.origin_city}
-                </Text>
-                <Text variant="bodySmall" style={styles.countryText}>
-                  {request.origin_country}
-                </Text>
-              </View>
-              <MaterialCommunityIcons name="arrow-right" size={28} color="#00A86B" />
-              <View style={styles.cityBlock}>
-                <Text variant="headlineSmall" style={styles.cityText}>
-                  {request.destination_city}
-                </Text>
-                <Text variant="bodySmall" style={styles.countryText}>
-                  {request.destination_country}
-                </Text>
-              </View>
+    <View style={styles.container}>
+      <ScrollView style={styles.scrollView}>
+        {/* Request Summary */}
+        <Surface style={styles.header} elevation={2}>
+          <View style={styles.routeRow}>
+            <View style={styles.cityBlock}>
+              <Text variant="headlineSmall" style={styles.cityText}>
+                {request.origin_city}
+              </Text>
+              <Text variant="bodySmall" style={styles.countryText}>
+                {request.origin_country}
+              </Text>
             </View>
-            <View style={styles.metaRow}>
-              <Chip icon="weight-kilogram" compact style={styles.metaChip}>
-                {request.package_weight_kg} kg
-              </Chip>
-              <Chip icon="calendar" compact style={styles.metaChip}>
-                By {new Date(request.needed_by_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-              </Chip>
-              <Chip
-                compact
-                style={[
-                  styles.metaChip,
-                  { backgroundColor: request.status === 'open' ? '#E8F5E9' : '#E3F2FD' },
-                ]}
-                textStyle={{ color: request.status === 'open' ? '#2E7D32' : '#1976D2' }}
-              >
-                {request.status === 'open' ? 'Open' : 'Matched'}
-              </Chip>
+            <MaterialCommunityIcons name="arrow-right" size={28} color="#00A86B" />
+            <View style={styles.cityBlock}>
+              <Text variant="headlineSmall" style={styles.cityText}>
+                {request.destination_city}
+              </Text>
+              <Text variant="bodySmall" style={styles.countryText}>
+                {request.destination_country}
+              </Text>
             </View>
-            <Text variant="bodyMedium" style={styles.descriptionText}>
-              {request.package_description}
-            </Text>
-          </Surface>
-
-          {/* Matching Travelers */}
-          <View style={styles.matchesSection}>
-            <Text variant="titleMedium" style={styles.matchesTitle}>
-              {matches.length} Matching Traveler{matches.length !== 1 ? 's' : ''}
-            </Text>
-
-            {matches.length === 0 ? (
-              <Card style={styles.emptyCard}>
-                <Card.Content style={styles.emptyContent}>
-                  <MaterialCommunityIcons name="account-search" size={48} color="#cccccc" />
-                  <Text variant="bodyMedium" style={styles.emptyText}>
-                    No matches yet. We'll notify you when a traveler matches your route.
-                  </Text>
-                </Card.Content>
-              </Card>
-            ) : (
-              matches.map((match) => (
-                <MatchCard key={match.id} match={match} onAccept={handleAcceptMatch} />
-              ))
-            )}
           </View>
+          <View style={styles.metaRow}>
+            <Chip icon="weight-kilogram" compact style={styles.metaChip}>
+              {request.package_weight_kg} kg
+            </Chip>
+            <Chip icon="calendar" compact style={styles.metaChip}>
+              By {new Date(request.needed_by_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+            </Chip>
+            <Chip
+              compact
+              style={[styles.metaChip, { backgroundColor: STATUS_BG[request.status] ?? '#F5F5F5' }]}
+              textStyle={{ color: STATUS_FG[request.status] ?? '#666666' }}
+            >
+              {STATUS_LABEL[request.status] ?? request.status}
+            </Chip>
+          </View>
+          <Text variant="bodyMedium" style={styles.descriptionText}>
+            {request.package_description}
+          </Text>
+        </Surface>
 
-          <View style={styles.bottomSpacing} />
-        </ScrollView>
+        {/* Matching Travelers */}
+        <View style={styles.matchesSection}>
+          <Text variant="titleMedium" style={styles.matchesTitle}>
+            {matches.length} Matching Traveler{matches.length !== 1 ? 's' : ''}
+          </Text>
 
-        {/* Unlock Contact Modal */}
-        <Portal>
-          <Modal
-            visible={unlockModalVisible}
-            onDismiss={() => setUnlockModalVisible(false)}
-            contentContainerStyle={styles.modal}
-          >
-            <MaterialCommunityIcons name="lock-open-variant" size={48} color="#00A86B" style={styles.modalIcon} />
-            <Text variant="headlineSmall" style={styles.modalTitle}>
-              Unlock Contact
-            </Text>
-            <Text variant="bodyMedium" style={styles.modalText}>
-              Use 1 credit (₹99) to unlock{' '}
-              <Text style={styles.bold}>{pendingMatch?.traveler.full_name}</Text>'s contact
-              details and start chatting.
-            </Text>
-            <Text variant="bodySmall" style={styles.modalNote}>
-              Your credits balance: 5 credits
-            </Text>
-            <View style={styles.modalActions}>
-              <Button
-                mode="outlined"
-                onPress={() => setUnlockModalVisible(false)}
-                style={styles.modalButton}
-              >
-                Cancel
-              </Button>
-              <Button
-                mode="contained"
-                onPress={handleConfirmUnlock}
-                loading={unlocking}
-                disabled={unlocking}
-                style={styles.modalButton}
-              >
-                Unlock (1 credit)
-              </Button>
-            </View>
-          </Modal>
-        </Portal>
-      </View>
-    </Portal.Host>
+          {matches.length === 0 ? (
+            <Card style={styles.emptyCard}>
+              <Card.Content style={styles.emptyContent}>
+                <MaterialCommunityIcons name="account-search" size={48} color="#cccccc" />
+                <Text variant="bodyMedium" style={styles.emptyText}>
+                  No matches yet. We'll notify you when a traveler matches your route.
+                </Text>
+              </Card.Content>
+            </Card>
+          ) : (
+            matches.map((match) => (
+              <MatchCard key={match.id} match={match} onAccept={handleAcceptMatch} />
+            ))
+          )}
+        </View>
+
+        <View style={styles.bottomSpacing} />
+      </ScrollView>
+
+      {/* Unlock Contact Modal */}
+      <Portal>
+        <Modal
+          visible={unlockModalVisible}
+          onDismiss={() => setUnlockModalVisible(false)}
+          contentContainerStyle={styles.modal}
+        >
+          <MaterialCommunityIcons name="lock-open-variant" size={48} color="#00A86B" style={styles.modalIcon} />
+          <Text variant="headlineSmall" style={styles.modalTitle}>
+            Unlock Contact
+          </Text>
+          <Text variant="bodyMedium" style={styles.modalText}>
+            Use 1 credit (₹99) to unlock{' '}
+            <Text style={styles.bold}>{pendingMatch?.traveler.full_name}</Text>'s contact
+            details and start chatting.
+          </Text>
+          <Text variant="bodySmall" style={styles.modalNote}>
+            Your credits balance: {balance} credits
+          </Text>
+          <View style={styles.modalActions}>
+            <Button
+              mode="outlined"
+              onPress={() => setUnlockModalVisible(false)}
+              style={styles.modalButton}
+            >
+              Cancel
+            </Button>
+            <Button
+              mode="contained"
+              onPress={handleConfirmUnlock}
+              loading={unlocking}
+              disabled={unlocking}
+              style={styles.modalButton}
+            >
+              Unlock (1 credit)
+            </Button>
+          </View>
+        </Modal>
+      </Portal>
+    </View>
   );
 }
 
