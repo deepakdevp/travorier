@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { PaperProvider } from 'react-native-paper';
 import { useAuthStore } from '@/stores/authStore';
+import { theme } from '@/lib/theme';
 
 export default function RootLayout() {
   const initialize = useAuthStore((state) => state.initialize);
@@ -14,7 +15,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <PaperProvider>
+    <PaperProvider theme={theme}>
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
