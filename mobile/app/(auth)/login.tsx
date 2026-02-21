@@ -6,6 +6,7 @@
  */
 import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
+import { AntDesign } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, spacing, radius } from '@/lib/theme';
@@ -92,7 +93,7 @@ export default function LoginScreen() {
               style={styles.buttonSpinner}
             />
           ) : (
-            <Text style={styles.googleIcon}>G</Text>
+            <AntDesign name="google" size={18} color={colors.primary} style={styles.googleIcon} />
           )}
           <Text style={styles.googleButtonLabel}>
             {loading ? 'Signing in...' : 'Sign in with Google'}
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl * 2,
+    paddingTop: 96,
     paddingBottom: spacing.xl,
   },
 
@@ -215,11 +216,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   googleIcon: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.primary,
     marginRight: spacing.sm,
-    fontFamily: 'sans-serif',
   },
   googleButtonLabel: {
     fontSize: 16,
