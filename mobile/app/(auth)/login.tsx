@@ -1,11 +1,14 @@
 /**
  * Login Screen - Google OAuth Authentication
+ *
+ * Design based on Stitch screen:
+ * projects/7580322135798196968/screens/d60fdf79a10b4eb39f118241d746ff67
  */
-import { View, StyleSheet, Alert, Linking } from 'react-native';
-import { Button, Text, ActivityIndicator } from 'react-native-paper';
+import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 import { useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import { LinearGradient } from 'expo-linear-gradient';
+import { colors, spacing, radius } from '@/lib/theme';
 
 export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
@@ -49,160 +52,214 @@ export default function LoginScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={['#0066cc', '#0052a3', '#003d7a']}
-      style={styles.gradient}
-    >
-      <View style={styles.container}>
-        {/* Logo Section */}
-        <View style={styles.logoSection}>
-          <Text variant="displayLarge" style={styles.logo}>
-            ✈️
-          </Text>
-          <Text variant="headlineLarge" style={styles.brandName}>
-            Travorier
-          </Text>
-          <Text variant="titleMedium" style={styles.tagline}>
-            Connect Travelers with Package Senders
-          </Text>
-        </View>
-
-        {/* Auth Section */}
-        <View style={styles.authSection}>
-          <Button
-            mode="contained"
-            onPress={handleGoogleSignIn}
-            disabled={loading}
-            icon="google"
-            contentStyle={styles.buttonContent}
-            style={styles.googleButton}
-            labelStyle={styles.buttonLabel}
-          >
-            {loading ? 'Signing in...' : 'Sign in with Google'}
-          </Button>
-
-          {loading && (
-            <ActivityIndicator
-              animating={true}
-              color="#ffffff"
-              size="small"
-              style={styles.loader}
-            />
-          )}
-
-          <Text variant="bodySmall" style={styles.disclaimer}>
-            By continuing, you agree to our
-          </Text>
-          <View style={styles.linksRow}>
-            <Text
-              variant="bodySmall"
-              style={styles.link}
-              onPress={handleTermsPress}
-            >
-              Terms of Service
-            </Text>
-            <Text variant="bodySmall" style={styles.linkSeparator}>
-              {' • '}
-            </Text>
-            <Text
-              variant="bodySmall"
-              style={styles.link}
-              onPress={handlePrivacyPress}
-            >
-              Privacy Policy
-            </Text>
+    <View style={styles.screen}>
+      {/* Hero / Logo section */}
+      <View style={styles.heroSection}>
+        {/* Icon badges row */}
+        <View style={styles.iconRow}>
+          <View style={styles.iconBadge}>
+            <Text style={styles.iconText}>📦</Text>
+          </View>
+          <View style={styles.iconBadge}>
+            <Text style={styles.iconText}>✈️</Text>
           </View>
         </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text variant="bodySmall" style={styles.footerText}>
-            Crowdsourced Logistics Platform
+        {/* Brand name */}
+        <Text style={styles.brandName}>Travorier</Text>
+
+        {/* Tagline */}
+        <Text style={styles.tagline}>Connect Travelers with Package Senders</Text>
+      </View>
+
+      {/* Auth card */}
+      <View style={styles.authCard}>
+        <Text style={styles.welcomeTitle}>Welcome back</Text>
+        <Text style={styles.welcomeSubtitle}>Sign in to continue</Text>
+
+        {/* Google sign-in button */}
+        <TouchableOpacity
+          style={[styles.googleButton, loading && styles.googleButtonDisabled]}
+          onPress={handleGoogleSignIn}
+          disabled={loading}
+          activeOpacity={0.8}
+        >
+          {loading ? (
+            <ActivityIndicator
+              animating={true}
+              color={colors.primary}
+              size="small"
+              style={styles.buttonSpinner}
+            />
+          ) : (
+            <Text style={styles.googleIcon}>G</Text>
+          )}
+          <Text style={styles.googleButtonLabel}>
+            {loading ? 'Signing in...' : 'Sign in with Google'}
           </Text>
-          <Text variant="bodySmall" style={styles.footerText}>
-            Version 1.0.0
+        </TouchableOpacity>
+
+        {/* Disclaimer + links */}
+        <View style={styles.disclaimerRow}>
+          <Text style={styles.disclaimerText}>By continuing, you agree to our </Text>
+          <Text style={styles.linkText} onPress={handleTermsPress}>
+            Terms of Service
+          </Text>
+          <Text style={styles.disclaimerText}> and </Text>
+          <Text style={styles.linkText} onPress={handlePrivacyPress}>
+            Privacy Policy
           </Text>
         </View>
       </View>
-    </LinearGradient>
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>Crowdsourced Logistics Platform</Text>
+        <Text style={styles.versionText}>v1.0.4</Text>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: {
+  screen: {
     flex: 1,
-  },
-  container: {
-    flex: 1,
+    backgroundColor: colors.background,
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 60,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xxl * 2,
+    paddingBottom: spacing.xl,
   },
-  logoSection: {
+
+  // Hero section
+  heroSection: {
     alignItems: 'center',
-    marginTop: 60,
+    paddingTop: spacing.xl,
   },
-  logo: {
-    fontSize: 80,
-    marginBottom: 16,
+  iconRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  iconBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconText: {
+    fontSize: 30,
   },
   brandName: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
+    fontSize: 36,
+    fontWeight: '700',
+    color: colors.primary,
+    marginBottom: spacing.sm,
+    letterSpacing: -0.5,
   },
   tagline: {
-    color: '#e0e0e0',
+    fontSize: 15,
+    fontWeight: '400',
+    color: colors.textSecondary,
     textAlign: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.md,
   },
-  authSection: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  googleButton: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    elevation: 4,
-    shadowColor: '#000000',
+
+  // Auth card
+  authCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  buttonContent: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+  welcomeTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+    textAlign: 'center',
   },
-  buttonLabel: {
-    color: '#0066cc',
+  welcomeSubtitle: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+  },
+
+  // Google button
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radius.full,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.xl,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  googleButtonDisabled: {
+    opacity: 0.6,
+  },
+  googleIcon: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.primary,
+    marginRight: spacing.sm,
+    fontFamily: 'sans-serif',
+  },
+  googleButtonLabel: {
     fontSize: 16,
     fontWeight: '600',
+    color: colors.textPrimary,
   },
-  loader: {
-    marginTop: 16,
+  buttonSpinner: {
+    marginRight: spacing.sm,
   },
-  disclaimer: {
-    color: '#e0e0e0',
-    marginTop: 32,
-    textAlign: 'center',
-  },
-  linksRow: {
+
+  // Disclaimer
+  disclaimerRow: {
     flexDirection: 'row',
-    marginTop: 4,
-  },
-  link: {
-    color: '#ffffff',
-    textDecorationLine: 'underline',
-  },
-  linkSeparator: {
-    color: '#e0e0e0',
-  },
-  footer: {
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     alignItems: 'center',
   },
+  disclaimerText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+  linkText: {
+    fontSize: 12,
+    color: colors.primary,
+    fontWeight: '500',
+    lineHeight: 18,
+  },
+
+  // Footer
+  footer: {
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   footerText: {
-    color: '#b0b0b0',
-    marginTop: 4,
+    fontSize: 12,
+    color: colors.textDisabled,
+  },
+  versionText: {
+    fontSize: 11,
+    color: colors.textDisabled,
   },
 });
