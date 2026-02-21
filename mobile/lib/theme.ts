@@ -67,7 +67,7 @@ export const radius = {
   md: 8,    // DEFAULT (0.5rem)
   lg: 16,   // lg     (1rem)
   xl: 24,   // xl     (1.5rem)
-  xxl: 24,
+  xxl: 32,
   full: 9999,
 };
 
@@ -76,7 +76,7 @@ export const radius = {
 // ---------------------------------------------------------------------------
 export const typography = {
   fontFamily: 'Inter',      // loaded via expo-font or system fallback
-  fontFamilySans: 'Inter, sans-serif',
+  fontFamilySans: 'Inter',
 
   // Font sizes (px equivalent)
   size: {
