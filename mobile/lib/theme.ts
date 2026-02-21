@@ -28,7 +28,9 @@ export const colors = {
 
   // Semantic / status
   success: '#22c55e',
+  successLight: '#e8f8f0',    // tinted success background
   warning: '#f59e0b',
+  warningLight: '#fff8e1',    // tinted warning background
   error: '#ef4444',
   info: '#3b82f6',
 
