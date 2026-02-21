@@ -32,7 +32,7 @@ export default function Index() {
         useNativeDriver: true,
       }),
     ]).start();
-  }, [fadeAnim, translateAnim]);
+  }, []);
 
   useEffect(() => {
     if (!initialized || loading) return;
