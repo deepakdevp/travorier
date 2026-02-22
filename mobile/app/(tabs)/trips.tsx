@@ -1,14 +1,19 @@
 /**
- * Trips Screen - Browse and Manage Trips
- * Search and filter available trips
+ * Browse All Trips Screen
+ *
+ * Revamped to match Stitch design:
+ * projects/7580322135798196968/screens/6e00a44a1d8a4092b8ebc4f7f3d1289f
+ *
+ * All colors sourced from @/lib/theme — no hardcoded hex values.
  */
 import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
-import { Text, Searchbar, Chip, FAB } from 'react-native-paper';
+import { Text, Searchbar, Chip } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useTripsStore } from '@/stores/tripsStore';
 import TripCard from '@/components/TripCard';
+import { colors, spacing, radius } from '@/lib/theme';
 
 export default function TripsScreen() {
   const router = useRouter();
@@ -56,22 +61,28 @@ export default function TripsScreen() {
   return (
     <View style={styles.container}>
       {/* Search Bar */}
-      <Searchbar
-        placeholder="Search by city or country..."
-        onChangeText={handleSearch}
-        value={searchQuery}
-        style={styles.searchBar}
-        icon="magnify"
-        clearIcon="close"
-      />
+      <View style={styles.searchWrapper}>
+        <Searchbar
+          placeholder="Search by city or country..."
+          onChangeText={handleSearch}
+          value={searchQuery}
+          style={styles.searchBar}
+          inputStyle={styles.searchInput}
+          icon="magnify"
+          clearIcon="close"
+          elevation={0}
+        />
+      </View>
 
       {/* Filter Chips */}
       <View style={styles.filterContainer}>
         <Chip
-          icon={filters.verifiedOnly ? 'check-circle' : 'circle-outline'}
+          icon={filters.verifiedOnly ? 'shield-check' : 'shield-outline'}
           selected={filters.verifiedOnly}
           onPress={toggleVerifiedFilter}
-          style={styles.chip}
+          style={[styles.chip, filters.verifiedOnly && styles.chipSelected]}
+          textStyle={[styles.chipText, filters.verifiedOnly && styles.chipTextSelected]}
+          showSelectedCheck={false}
         >
           Verified Only
         </Chip>
@@ -88,20 +99,21 @@ export default function TripsScreen() {
         )}
       </View>
 
-      {/* Results Count */}
+      {/* Results Header */}
       <View style={styles.resultsHeader}>
-        <Text variant="bodyMedium" style={styles.resultsText}>
+        <Text style={styles.resultsText}>
           {filteredTrips.length} {filteredTrips.length === 1 ? 'trip' : 'trips'} found
         </Text>
         {filteredTrips.some((trip) => trip.is_boosted) && (
           <View style={styles.featuredNote}>
-            <MaterialCommunityIcons name="star" size={14} color="#FFB800" />
-            <Text variant="bodySmall" style={styles.featuredText}>
-              Featured trips shown first
-            </Text>
+            <MaterialCommunityIcons name="star" size={14} color={colors.warning} />
+            <Text style={styles.featuredText}>Featured trips shown first</Text>
           </View>
         )}
       </View>
+
+      {/* Divider */}
+      <View style={styles.headerDivider} />
 
       {/* Trip List */}
       <FlatList
@@ -110,15 +122,20 @@ export default function TripsScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={handleRefresh} />
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={handleRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <MaterialCommunityIcons name="airplane-off" size={64} color="#cccccc" />
-            <Text variant="titleMedium" style={styles.emptyTitle}>
-              No trips found
-            </Text>
-            <Text variant="bodyMedium" style={styles.emptyText}>
+            <View style={styles.emptyIconWrapper}>
+              <MaterialCommunityIcons name="airplane-off" size={48} color={colors.textDisabled} />
+            </View>
+            <Text style={styles.emptyTitle}>No trips found</Text>
+            <Text style={styles.emptyText}>
               {hasActiveFilters
                 ? 'Try adjusting your filters'
                 : 'Check back later for new trips'}
@@ -133,64 +150,127 @@ export default function TripsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
+  },
+
+  // ---- Search bar ----
+  searchWrapper: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   searchBar: {
-    margin: 16,
-    marginBottom: 8,
-    elevation: 2,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
+  searchInput: {
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+
+  // ---- Filter chips ----
   filterContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    gap: 8,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
   },
   chip: {
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.full,
+  },
+  chipSelected: {
+    backgroundColor: colors.primaryLight,
+    borderColor: colors.primary,
+  },
+  chipText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  chipTextSelected: {
+    color: colors.primary,
   },
   clearChip: {
-    backgroundColor: '#FFEBEE',
+    backgroundColor: colors.warningLight,
+    borderWidth: 1,
+    borderColor: colors.warning,
+    borderRadius: radius.full,
   },
   clearChipText: {
-    color: '#d32f2f',
+    fontSize: 13,
+    color: colors.warning,
+    fontWeight: '500',
   },
+
+  // ---- Results header ----
   resultsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   resultsText: {
-    color: '#666666',
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: '500',
   },
   featuredNote: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
   },
   featuredText: {
-    marginLeft: 4,
-    color: '#FFB800',
+    fontSize: 12,
+    color: colors.warning,
+    fontWeight: '500',
     fontStyle: 'italic',
   },
+  headerDivider: {
+    height: 1,
+    backgroundColor: colors.divider,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.xs,
+  },
+
+  // ---- Trip list ----
   listContent: {
+    paddingTop: spacing.xs,
     paddingBottom: 80,
   },
+
+  // ---- Empty state ----
   emptyContainer: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 64,
+    paddingVertical: spacing.xxl,
+    paddingHorizontal: spacing.xl,
+  },
+  emptyIconWrapper: {
+    width: 88,
+    height: 88,
+    borderRadius: radius.full,
+    backgroundColor: colors.divider,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
   },
   emptyTitle: {
-    marginTop: 16,
-    marginBottom: 8,
-    color: '#666666',
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
   emptyText: {
-    color: '#999999',
+    fontSize: 14,
+    color: colors.textDisabled,
     textAlign: 'center',
+    lineHeight: 20,
   },
 });
