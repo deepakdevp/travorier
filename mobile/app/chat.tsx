@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { supabase } from '@/services/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { useRequestsStore } from '@/stores/requestsStore';
+import { colors, spacing, radius } from '@/lib/theme';
 
 interface Message {
   id: string;
@@ -186,9 +187,9 @@ export default function ChatScreen() {
       <Surface style={styles.header} elevation={2}>
         <View style={styles.headerContent}>
           {traveler.avatar_url ? (
-            <Avatar.Image size={40} source={{ uri: traveler.avatar_url }} />
+            <Avatar.Image size={44} source={{ uri: traveler.avatar_url }} />
           ) : (
-            <Avatar.Text size={40} label={travelerInitials} />
+            <Avatar.Text size={44} label={travelerInitials} />
           )}
           <View style={styles.headerInfo}>
             <Text variant="titleSmall" style={styles.travelerName}>
@@ -199,7 +200,7 @@ export default function ChatScreen() {
             </Text>
           </View>
           {traveler.verified && (
-            <MaterialCommunityIcons name="check-decagram" size={20} color="#0066cc" />
+            <MaterialCommunityIcons name="check-decagram" size={22} color={colors.primary} />
           )}
         </View>
       </Surface>
@@ -207,14 +208,14 @@ export default function ChatScreen() {
       {/* Chat Lock / Info Banner */}
       {isChatLocked ? (
         <View style={styles.lockBanner}>
-          <MaterialCommunityIcons name="lock" size={16} color="#ffffff" />
+          <MaterialCommunityIcons name="lock" size={16} color={colors.white} />
           <Text variant="bodySmall" style={styles.lockText}>
             Chat locked 24 hours after flight
           </Text>
         </View>
       ) : (
         <View style={styles.infoBanner}>
-          <MaterialCommunityIcons name="information" size={14} color="#666666" />
+          <MaterialCommunityIcons name="information" size={14} color={colors.textSecondary} />
           <Text variant="bodySmall" style={styles.infoText}>
             Chat available until 24h after flight on{' '}
             {flightDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
@@ -231,13 +232,13 @@ export default function ChatScreen() {
         </View>
       ) : loadError ? (
         <View style={styles.loadingContainer}>
-          <MaterialCommunityIcons name="alert-circle-outline" size={48} color="#cccccc" />
+          <MaterialCommunityIcons name="alert-circle-outline" size={48} color={colors.textDisabled} />
           <Text variant="bodyMedium" style={styles.loadingText}>
             Failed to load messages
           </Text>
           <Text
             variant="bodySmall"
-            style={[styles.loadingText, { color: '#0066cc', marginTop: 8 }]}
+            style={[styles.loadingText, { color: colors.primary, marginTop: spacing.sm }]}
             onPress={loadMessageHistory}
           >
             Tap to retry
@@ -253,7 +254,7 @@ export default function ChatScreen() {
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
           ListEmptyComponent={
             <View style={styles.emptyChat}>
-              <MaterialCommunityIcons name="chat-outline" size={48} color="#cccccc" />
+              <MaterialCommunityIcons name="chat-outline" size={48} color={colors.textDisabled} />
               <Text variant="bodyMedium" style={styles.emptyChatText}>
                 Say hi to start the conversation!
               </Text>
@@ -279,7 +280,7 @@ export default function ChatScreen() {
               icon="send"
               disabled={!inputText.trim() || sending || isChatLocked || !user}
               onPress={sendMessage}
-              color={inputText.trim() && !isChatLocked ? '#0066cc' : '#cccccc'}
+              color={inputText.trim() && !isChatLocked ? colors.primary : colors.textDisabled}
             />
           }
         />
@@ -289,57 +290,123 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0f0f0' },
-  header: { backgroundColor: '#ffffff', paddingHorizontal: 16, paddingVertical: 12 },
-  headerContent: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  headerInfo: { flex: 1 },
-  travelerName: { fontWeight: 'bold', color: '#333333' },
-  routeText: { color: '#666666' },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 4,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm + 4,
+  },
+  headerInfo: {
+    flex: 1,
+  },
+  travelerName: {
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+  },
+  routeText: {
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
   lockBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#666666',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    gap: spacing.sm - 2,
+    backgroundColor: colors.textSecondary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  lockText: { color: '#ffffff' },
+  lockText: {
+    color: colors.white,
+  },
   infoBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#FFF9E6',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    gap: spacing.sm - 2,
+    backgroundColor: colors.warningLight,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  infoText: { color: '#666666', flex: 1 },
-  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loadingText: { color: '#999999' },
-  messagesList: { padding: 16, paddingBottom: 8 },
-  messageBubbleContainer: { marginBottom: 8 },
-  myMessageContainer: { alignItems: 'flex-end' },
-  theirMessageContainer: { alignItems: 'flex-start' },
+  infoText: {
+    color: colors.textSecondary,
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    color: colors.textDisabled,
+  },
+  messagesList: {
+    padding: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  messageBubbleContainer: {
+    marginBottom: spacing.sm,
+  },
+  myMessageContainer: {
+    alignItems: 'flex-end',
+  },
+  theirMessageContainer: {
+    alignItems: 'flex-start',
+  },
   messageBubble: {
     maxWidth: '75%',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 18,
+    paddingHorizontal: spacing.sm + 6,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radius.xl,
   },
-  myBubble: { backgroundColor: '#0066cc', borderBottomRightRadius: 4 },
-  theirBubble: { backgroundColor: '#ffffff', borderBottomLeftRadius: 4 },
-  myMessageText: { color: '#ffffff' },
-  theirMessageText: { color: '#333333' },
-  timestamp: { fontSize: 10, marginTop: 4 },
-  myTimestamp: { color: 'rgba(255,255,255,0.7)', textAlign: 'right' },
-  theirTimestamp: { color: '#999999' },
-  emptyChat: { alignItems: 'center', paddingVertical: 60 },
-  emptyChatText: { color: '#999999', marginTop: 12 },
+  myBubble: {
+    backgroundColor: colors.primary,
+    borderBottomRightRadius: radius.sm,
+  },
+  theirBubble: {
+    backgroundColor: colors.surface,
+    borderBottomLeftRadius: radius.sm,
+  },
+  myMessageText: {
+    color: colors.white,
+  },
+  theirMessageText: {
+    color: colors.textPrimary,
+  },
+  timestamp: {
+    fontSize: 10,
+    marginTop: spacing.xs,
+  },
+  myTimestamp: {
+    color: 'rgba(255,255,255,0.7)',
+    textAlign: 'right',
+  },
+  theirTimestamp: {
+    color: colors.textDisabled,
+  },
+  emptyChat: {
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyChatText: {
+    color: colors.textDisabled,
+    marginTop: spacing.sm + 4,
+  },
   inputBar: {
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.sm + 4,
+    paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: colors.border,
   },
-  textInput: { backgroundColor: '#ffffff', flex: 1 },
+  textInput: {
+    backgroundColor: colors.surface,
+    flex: 1,
+  },
 });
