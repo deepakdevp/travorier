@@ -1,21 +1,35 @@
 /**
  * Profile Screen - User Profile and Settings
- * Display user info, stats, and account actions
+ * Design: Stitch "User Account Profile" screen
+ * projects/7580322135798196968/screens/316b74388bb042aa997649d5c2423ea2
  */
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { Text, Avatar, Card, Button, Divider, List, Surface } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { Text, Avatar, Divider } from 'react-native-paper';
 import { useAuthStore } from '@/stores/authStore';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { colors, spacing, radius } from '@/lib/theme';
+
+// Stat icon tint colors (from Stitch design)
+const STAT_COLORS = {
+  trustScore: { icon: '#2563eb', bg: '#eff6ff' },    // blue-600 / blue-50
+  trips:      { icon: '#9333ea', bg: '#faf5ff' },    // purple-600 / purple-50
+  deliveries: { icon: '#ea580c', bg: '#fff7ed' },    // orange-600 / orange-50
+  rating:     { icon: '#ca8a04', bg: '#fefce8' },    // yellow-600 / yellow-50
+};
+
+// Menu item icon tint: slate
+const MENU_ICON_BG   = '#f1f5f9';   // slate-100
+const MENU_ICON_COLOR = '#475569';  // slate-600
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
   const router = useRouter();
 
-  const userName = user?.user_metadata?.full_name || 'User';
-  const userEmail = user?.email || '';
-  const avatarUrl = user?.user_metadata?.avatar_url;
-  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const userName    = user?.user_metadata?.full_name || 'User';
+  const userEmail   = user?.email || '';
+  const avatarUrl   = user?.user_metadata?.avatar_url;
+  const userInitials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
   const handleSignOut = async () => {
     Alert.alert(
@@ -44,245 +58,372 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Profile Header */}
-      <Surface style={styles.header} elevation={2}>
-        <View style={styles.avatarContainer}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+
+      {/* ── Profile Header ── */}
+      <View style={styles.profileHeader}>
+        {/* Avatar with verified badge */}
+        <View style={styles.avatarWrapper}>
           {avatarUrl ? (
-            <Avatar.Image size={80} source={{ uri: avatarUrl }} />
+            <Avatar.Image size={96} source={{ uri: avatarUrl }} style={styles.avatarImage} />
           ) : (
-            <Avatar.Text size={80} label={userInitials} />
+            <Avatar.Text size={96} label={userInitials} style={styles.avatarImage} />
           )}
-        </View>
-        <Text variant="headlineSmall" style={styles.name}>
-          {userName}
-        </Text>
-        <Text variant="bodyMedium" style={styles.email}>
-          {userEmail}
-        </Text>
-
-        {/* Verification Status */}
-        <View style={styles.verificationContainer}>
-          <MaterialCommunityIcons name="shield-check-outline" size={20} color="#666666" />
-          <Text variant="bodySmall" style={styles.verificationText}>
-            Not Verified
-          </Text>
-        </View>
-      </Surface>
-
-      {/* Stats Card */}
-      <Card style={styles.statsCard}>
-        <Card.Content>
-          <Text variant="titleMedium" style={styles.cardTitle}>
-            Your Stats
-          </Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statItem}>
-              <MaterialCommunityIcons name="star" size={32} color="#FFB800" />
-              <Text variant="headlineSmall" style={styles.statValue}>0</Text>
-              <Text variant="bodySmall" style={styles.statLabel}>Trust Score</Text>
-            </View>
-            <View style={styles.statItem}>
-              <MaterialCommunityIcons name="airplane" size={32} color="#0066cc" />
-              <Text variant="headlineSmall" style={styles.statValue}>0</Text>
-              <Text variant="bodySmall" style={styles.statLabel}>Trips Posted</Text>
-            </View>
-            <View style={styles.statItem}>
-              <MaterialCommunityIcons name="package-variant-closed" size={32} color="#00A86B" />
-              <Text variant="headlineSmall" style={styles.statValue}>0</Text>
-              <Text variant="bodySmall" style={styles.statLabel}>Deliveries</Text>
-            </View>
-            <View style={styles.statItem}>
-              <MaterialCommunityIcons name="star-circle" size={32} color="#9C27B0" />
-              <Text variant="headlineSmall" style={styles.statValue}>0.0</Text>
-              <Text variant="bodySmall" style={styles.statLabel}>Rating</Text>
-            </View>
+          {/* Online / verified indicator */}
+          <View style={styles.verifiedBadge}>
+            <MaterialCommunityIcons name="check" size={12} color={colors.white} />
           </View>
-        </Card.Content>
-      </Card>
+        </View>
 
-      {/* Account Settings */}
-      <Card style={styles.settingsCard}>
-        <Card.Content>
-          <Text variant="titleMedium" style={styles.cardTitle}>
-            Account Settings
-          </Text>
-        </Card.Content>
-        <List.Item
-          title="Edit Profile"
-          description="Update your personal information"
-          left={props => <List.Icon {...props} icon="account-edit" />}
-          right={props => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            // TODO: Navigate to edit profile (Milestone 5)
-            Alert.alert('Coming Soon', 'Profile editing will be available in Milestone 5');
-          }}
-        />
-        <Divider />
-        <List.Item
-          title="Verification"
-          description="Verify your identity"
-          left={props => <List.Icon {...props} icon="shield-check" />}
-          right={props => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            // TODO: Navigate to verification (Milestone 5)
-            Alert.alert('Coming Soon', 'Identity verification will be available soon');
-          }}
-        />
-        <Divider />
-        <List.Item
-          title="Payment Methods"
-          description="Manage credits and payment options"
-          left={props => <List.Icon {...props} icon="credit-card" />}
-          right={props => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            // TODO: Navigate to payment settings
-            Alert.alert('Coming Soon', 'Payment settings will be available soon');
-          }}
-        />
-        <Divider />
-        <List.Item
-          title="Notifications"
-          description="Manage notification preferences"
-          left={props => <List.Icon {...props} icon="bell" />}
-          right={props => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            // TODO: Navigate to notification settings
-            Alert.alert('Coming Soon', 'Notification settings will be available soon');
-          }}
-        />
-      </Card>
+        <Text style={styles.profileName}>{userName}</Text>
+        <Text style={styles.profileEmail}>{userEmail}</Text>
 
-      {/* App Info */}
-      <Card style={styles.infoCard}>
-        <List.Item
-          title="Help & Support"
-          left={props => <List.Icon {...props} icon="help-circle" />}
-          right={props => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            Alert.alert('Help & Support', 'Support features will be available soon');
-          }}
-        />
-        <Divider />
-        <List.Item
-          title="Terms & Privacy"
-          left={props => <List.Icon {...props} icon="file-document" />}
-          right={props => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            Alert.alert('Terms & Privacy', 'Legal documents will be available soon');
-          }}
-        />
-        <Divider />
-        <List.Item
-          title="About Travorier"
-          description="Version 1.0.0"
-          left={props => <List.Icon {...props} icon="information" />}
-          right={props => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            Alert.alert('Travorier', 'Version 1.0.0\nCrowdsourced logistics platform');
-          }}
-        />
-      </Card>
-
-      {/* Sign Out Button */}
-      <View style={styles.signOutContainer}>
-        <Button
-          mode="outlined"
-          onPress={handleSignOut}
-          icon="logout"
-          textColor="#d32f2f"
-          style={styles.signOutButton}
-        >
-          Sign Out
-        </Button>
+        {/* Verified pill */}
+        <View style={styles.verifiedPill}>
+          <MaterialCommunityIcons name="check-decagram" size={14} color={colors.primary} />
+          <Text style={styles.verifiedPillText}>Verified Traveler</Text>
+        </View>
       </View>
+
+      {/* ── Performance Stats ── */}
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Performance Stats</Text>
+
+        <View style={styles.statsGrid}>
+          {/* Trust Score */}
+          <View style={styles.statCard}>
+            <View style={[styles.statIconBox, { backgroundColor: STAT_COLORS.trustScore.bg }]}>
+              <MaterialCommunityIcons name="shield-check" size={22} color={STAT_COLORS.trustScore.icon} />
+            </View>
+            <Text style={styles.statValue}>0</Text>
+            <Text style={styles.statLabel}>Trust Score</Text>
+          </View>
+
+          {/* Trips Posted */}
+          <View style={styles.statCard}>
+            <View style={[styles.statIconBox, { backgroundColor: STAT_COLORS.trips.bg }]}>
+              <MaterialCommunityIcons name="airplane-takeoff" size={22} color={STAT_COLORS.trips.icon} />
+            </View>
+            <Text style={styles.statValue}>0</Text>
+            <Text style={styles.statLabel}>Trips Posted</Text>
+          </View>
+
+          {/* Deliveries */}
+          <View style={styles.statCard}>
+            <View style={[styles.statIconBox, { backgroundColor: STAT_COLORS.deliveries.bg }]}>
+              <MaterialCommunityIcons name="truck-delivery" size={22} color={STAT_COLORS.deliveries.icon} />
+            </View>
+            <Text style={styles.statValue}>0</Text>
+            <Text style={styles.statLabel}>Deliveries</Text>
+          </View>
+
+          {/* Rating */}
+          <View style={styles.statCard}>
+            <View style={[styles.statIconBox, { backgroundColor: STAT_COLORS.rating.bg }]}>
+              <MaterialCommunityIcons name="star" size={22} color={STAT_COLORS.rating.icon} />
+            </View>
+            <Text style={styles.statValue}>0.0</Text>
+            <Text style={styles.statLabel}>Rating</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* ── Account Settings ── */}
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Account Settings</Text>
+
+        <View style={styles.menuCard}>
+          <MenuItem
+            icon="account-outline"
+            label="Edit Personal Details"
+            onPress={() => Alert.alert('Coming Soon', 'Profile editing will be available in Milestone 5')}
+          />
+          <Divider style={styles.divider} />
+          <MenuItem
+            icon="card-account-details-outline"
+            label="Identity Verification"
+            subtitle="Not Verified"
+            onPress={() => Alert.alert('Coming Soon', 'Identity verification will be available soon')}
+          />
+          <Divider style={styles.divider} />
+          <MenuItem
+            icon="credit-card-outline"
+            label="Payment & Payouts"
+            onPress={() => Alert.alert('Coming Soon', 'Payment settings will be available soon')}
+          />
+          <Divider style={styles.divider} />
+          <MenuItem
+            icon="bell-outline"
+            label="Notifications"
+            onPress={() => Alert.alert('Coming Soon', 'Notification settings will be available soon')}
+          />
+        </View>
+      </View>
+
+      {/* ── App Info ── */}
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>App Info</Text>
+
+        <View style={styles.menuCard}>
+          <MenuItem
+            icon="help-circle-outline"
+            label="Help & Support"
+            trailingIcon="open-in-new"
+            onPress={() => Alert.alert('Help & Support', 'Support features will be available soon')}
+          />
+          <Divider style={styles.divider} />
+          <MenuItem
+            icon="file-document-outline"
+            label="Terms & Privacy Policy"
+            onPress={() => Alert.alert('Terms & Privacy', 'Legal documents will be available soon')}
+          />
+        </View>
+
+        {/* Sign Out */}
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.75}>
+          <MaterialCommunityIcons name="logout" size={20} color={colors.error} />
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
+
+        {/* Version */}
+        <Text style={styles.versionText}>Version 1.0.0</Text>
+      </View>
+
     </ScrollView>
   );
 }
 
+// ---------------------------------------------------------------------------
+// MenuItem sub-component
+// ---------------------------------------------------------------------------
+interface MenuItemProps {
+  icon: string;
+  label: string;
+  subtitle?: string;
+  trailingIcon?: string;
+  onPress: () => void;
+}
+
+function MenuItem({ icon, label, subtitle, trailingIcon = 'chevron-right', onPress }: MenuItemProps) {
+  return (
+    <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
+      {/* Leading icon */}
+      <View style={styles.menuIconBox}>
+        <MaterialCommunityIcons name={icon as any} size={20} color={MENU_ICON_COLOR} />
+      </View>
+
+      {/* Label (+ optional subtitle) */}
+      <View style={styles.menuLabelGroup}>
+        <Text style={styles.menuLabel}>{label}</Text>
+        {subtitle ? <Text style={styles.menuSubtitle}>{subtitle}</Text> : null}
+      </View>
+
+      {/* Trailing chevron */}
+      <MaterialCommunityIcons name={trailingIcon as any} size={20} color={colors.textDisabled} />
+    </TouchableOpacity>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
-  header: {
-    padding: 24,
+  contentContainer: {
+    paddingBottom: spacing.xxl,
+  },
+
+  // ── Profile Header ──────────────────────────────────────────────────────
+  profileHeader: {
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    marginBottom: 16,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.background,
   },
-  avatarContainer: {
-    marginBottom: 16,
+  avatarWrapper: {
+    position: 'relative',
+    marginBottom: spacing.md,
   },
-  name: {
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 4,
+  avatarImage: {
+    borderWidth: 3,
+    borderColor: colors.white,
+    // Shadow
+    shadowColor: colors.black,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
-  email: {
-    color: '#666666',
-    marginBottom: 12,
+  verifiedBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 24,
+    height: 24,
+    borderRadius: radius.full,
+    backgroundColor: colors.success,
+    borderWidth: 2,
+    borderColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  verificationContainer: {
+  profileName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+    textAlign: 'center',
+  },
+  profileEmail: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm + 4,
+    textAlign: 'center',
+  },
+  verifiedPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    gap: 4,
+    paddingHorizontal: spacing.sm + 4,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    backgroundColor: colors.primaryLight,
   },
-  verificationText: {
-    marginLeft: 4,
-    color: '#666666',
+  verifiedPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary,
   },
-  statsCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    backgroundColor: '#ffffff',
+
+  // ── Section ─────────────────────────────────────────────────────────────
+  section: {
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.lg,
   },
-  cardTitle: {
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 16,
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
   },
+
+  // ── Stats Grid ───────────────────────────────────────────────────────────
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
-  statItem: {
-    width: '48%',
+  statCard: {
+    width: '47.5%',
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    // Shadow
+    shadowColor: colors.black,
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  statIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    marginBottom: 12,
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
   },
   statValue: {
-    fontWeight: 'bold',
-    color: '#333333',
-    marginTop: 8,
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 2,
   },
   statLabel: {
-    color: '#666666',
-    marginTop: 4,
-    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.textSecondary,
   },
-  settingsCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    backgroundColor: '#ffffff',
+
+  // ── Menu Card ────────────────────────────────────────────────────────────
+  menuCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+    // Shadow
+    shadowColor: colors.black,
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
   },
-  infoCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    backgroundColor: '#ffffff',
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 4,
   },
-  signOutContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+  menuIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    backgroundColor: MENU_ICON_BG,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm + 4,
   },
+  menuLabelGroup: {
+    flex: 1,
+  },
+  menuLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.textPrimary,
+  },
+  menuSubtitle: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
+  divider: {
+    backgroundColor: colors.divider,
+    marginHorizontal: spacing.md,
+  },
+
+  // ── Sign Out ─────────────────────────────────────────────────────────────
   signOutButton: {
-    borderColor: '#d32f2f',
+    marginTop: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm + 4,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: '#fef2f2',   // red-50 equivalent
+    borderWidth: 1,
+    borderColor: '#fee2e2',       // red-100 equivalent
+  },
+  signOutText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.error,
+  },
+  versionText: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: colors.textDisabled,
+    marginTop: spacing.lg,
   },
 });
