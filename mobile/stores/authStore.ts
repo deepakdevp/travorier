@@ -2,6 +2,7 @@
  * Authentication state management with Zustand
  */
 import { create } from 'zustand';
+import { Platform } from 'react-native';
 import { supabase } from '@/services/supabase';
 import { Session, User } from '@supabase/supabase-js';
 
@@ -39,9 +40,11 @@ export const useAuthStore = create<AuthState>((set) => ({
         provider: 'google',
         options: {
           // Production and development redirect URLs
-          redirectTo: __DEV__
-            ? 'exp://localhost:19000' // Development (Expo Go)
-            : 'travorier://', // Production (custom scheme)
+          redirectTo: Platform.OS === 'web'
+            ? 'http://localhost:8081'   // Web browser dev
+            : __DEV__
+            ? 'exp://localhost:19000'   // Expo Go
+            : 'travorier://',          // Production (custom scheme)
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

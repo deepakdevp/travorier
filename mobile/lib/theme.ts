@@ -14,8 +14,8 @@ import { MD3LightTheme } from 'react-native-paper';
 // ---------------------------------------------------------------------------
 export const colors = {
   // Brand / primary
-  primary: '#136dec',
-  primaryLight: '#e8f1fd',    // tinted primary for backgrounds / chips
+  primary: '#FF5722',
+  primaryLight: '#fff3ee',    // tinted primary for backgrounds / chips
   primaryContent: '#ffffff',  // text/icon on primary-colored surfaces
 
   // Backgrounds

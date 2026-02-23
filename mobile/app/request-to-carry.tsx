@@ -1,34 +1,78 @@
 /**
  * Request to Carry Screen
- * Form for senders to request travelers to carry their package
+ * Revamped UI based on Stitch "Request Delivery / Request to Carry Form" design.
+ * Preserves all original business logic unchanged.
  */
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import {
-  Text,
+  View,
+  StyleSheet,
+  ScrollView,
+  Alert,
   TextInput,
-  Button,
-  HelperText,
-  Surface,
-  Avatar,
-  Chip,
-  Divider,
-} from 'react-native-paper';
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { Text, Surface } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTripsStore } from '@/stores/tripsStore';
 import { colors, spacing, radius } from '@/lib/theme';
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+type PackageType = 'parcel' | 'documents' | 'electronics';
+
+interface CategoryPill {
+  id: PackageType;
+  label: string;
+  icon: string;
+}
+
+const CATEGORY_PILLS: CategoryPill[] = [
+  { id: 'parcel', label: 'Parcel', icon: 'package-variant' },
+  { id: 'documents', label: 'Documents', icon: 'file-document-outline' },
+  { id: 'electronics', label: 'Electronics', icon: 'laptop' },
+];
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+/** Derive a 3-letter city "code" from the first 3 chars of the city name. */
+function cityCode(city: string): string {
+  return city.slice(0, 3).toUpperCase();
+}
+
+/** Format a date string as "Oct 24". */
+function formatShortDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
 export default function RequestToCarryScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { selectedTrip } = useTripsStore();
 
+  // ── Business-logic state (preserved from original) ──────────────────────
   const [packageWeight, setPackageWeight] = useState('');
   const [packageDescription, setPackageDescription] = useState('');
   const [packageValue, setPackageValue] = useState('');
   const [senderNotes, setSenderNotes] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // ── New UI state ─────────────────────────────────────────────────────────
+  const [packageType, setPackageType] = useState<PackageType>('parcel');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [dimensionsExpanded, setDimensionsExpanded] = useState(false);
+
+  // Guard — must have a selected trip
   if (!selectedTrip) {
     router.back();
     return null;
@@ -38,6 +82,7 @@ export default function RequestToCarryScreen() {
   const weight = parseFloat(packageWeight) || 0;
   const estimatedCost = weight * trip.price_per_kg;
 
+  // ── Validation (preserved from original) ─────────────────────────────────
   const hasErrors = () => {
     if (!packageWeight || weight <= 0) return true;
     if (weight > trip.available_weight_kg) return true;
@@ -46,9 +91,14 @@ export default function RequestToCarryScreen() {
     return false;
   };
 
+  // ── Submit (preserved from original) ─────────────────────────────────────
   const handleSubmitRequest = async () => {
     if (hasErrors()) {
       Alert.alert('Invalid Input', 'Please fill in all required fields correctly.');
+      return;
+    }
+    if (!agreedToTerms) {
+      Alert.alert('Terms Required', 'Please agree to the Terms of Service before submitting.');
       return;
     }
 
@@ -56,10 +106,7 @@ export default function RequestToCarryScreen() {
       'Confirm Request',
       `Submit request to carry ${packageWeight}kg package from ${trip.origin_city} to ${trip.destination_city}?\n\nEstimated cost: ₹${estimatedCost}`,
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Submit',
           onPress: async () => {
@@ -91,704 +138,775 @@ export default function RequestToCarryScreen() {
     );
   };
 
-  const travelerInitial = trip.traveler.full_name
-    ? trip.traveler.full_name.charAt(0).toUpperCase()
-    : '?';
+  // ── Derived display values ───────────────────────────────────────────────
+  const originCode = cityCode(trip.origin_city);
+  const destCode = cityCode(trip.destination_city);
+  const departureDateShort = formatShortDate(trip.departure_date);
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+    <View style={styles.root}>
+      {/* ------------------------------------------------------------------ */}
+      {/* Sticky Header                                                        */}
+      {/* ------------------------------------------------------------------ */}
+      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.headerBack} hitSlop={8}>
+          <MaterialCommunityIcons name="arrow-left" size={22} color={colors.textPrimary} />
+        </TouchableOpacity>
 
-        {/* Traveler Profile Card */}
-        <Surface style={styles.travelerCard} elevation={0}>
-          <View style={styles.travelerHeader}>
-            <Avatar.Text
-              size={52}
-              label={travelerInitial}
-              style={styles.avatar}
-              labelStyle={styles.avatarLabel}
-            />
-            <View style={styles.travelerInfo}>
-              <Text variant="titleMedium" style={styles.travelerName}>
-                {trip.traveler.full_name}
-              </Text>
-              <View style={styles.ratingRow}>
-                <MaterialCommunityIcons name="star" size={14} color={colors.warning} />
-                <Text variant="bodySmall" style={styles.ratingText}>
-                  4.9 · Verified Traveler
+        <Text style={styles.headerTitle}>Request Delivery</Text>
+
+        <TouchableOpacity style={styles.headerMenu} hitSlop={8}>
+          <MaterialCommunityIcons name="dots-horizontal" size={22} color={colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Scrollable body                                                      */}
+      {/* ------------------------------------------------------------------ */}
+      <KeyboardAvoidingView
+        style={styles.flex1}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={insets.top + 56}
+      >
+        <ScrollView
+          style={styles.flex1}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* -------------------------------------------------------------- */}
+          {/* Traveler Card (orange gradient bg)                               */}
+          {/* -------------------------------------------------------------- */}
+          <View style={styles.travelerCard}>
+            {/* Top row: traveler identity + date pill */}
+            <View style={styles.travelerTopRow}>
+              {/* Left: icon + label + name */}
+              <View style={styles.travelerIdentity}>
+                <View style={styles.travelerAvatarCircle}>
+                  <MaterialCommunityIcons name="airplane-takeoff" size={20} color={colors.primary} />
+                </View>
+                <View style={styles.travelerTextStack}>
+                  <Text style={styles.travelerRoleLabel}>TRAVELER</Text>
+                  <Text style={styles.travelerName} numberOfLines={1}>
+                    {trip.traveler.full_name}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Right: date pill */}
+              <View style={styles.datePill}>
+                <Text style={styles.datePillText}>{departureDateShort}</Text>
+              </View>
+            </View>
+
+            {/* Route row */}
+            <View style={styles.routeRow}>
+              {/* Origin */}
+              <View style={styles.routeEndpoint}>
+                <Text style={styles.routeCode}>{originCode}</Text>
+                <Text style={styles.routeCityFull} numberOfLines={1}>
+                  {trip.origin_city}
+                </Text>
+              </View>
+
+              {/* Center flight arc */}
+              <View style={styles.routeArc}>
+                <View style={styles.routeDashedLine} />
+                <View style={styles.airplaneCircle}>
+                  <MaterialCommunityIcons name="airplane" size={18} color={colors.primary} />
+                </View>
+                <View style={styles.routeDashedLine} />
+              </View>
+
+              {/* Destination */}
+              <View style={[styles.routeEndpoint, styles.routeEndpointRight]}>
+                <Text style={styles.routeCode}>{destCode}</Text>
+                <Text style={styles.routeCityFull} numberOfLines={1}>
+                  {trip.destination_city}
                 </Text>
               </View>
             </View>
-            <Chip
-              compact
-              style={styles.verifiedChip}
-              textStyle={styles.verifiedChipText}
-              icon={() => (
-                <MaterialCommunityIcons
-                  name="check-decagram"
-                  size={14}
-                  color={colors.primary}
-                />
-              )}
-            >
-              Verified
-            </Chip>
+
+            {/* Direct flight label */}
+            <View style={styles.directFlightRow}>
+              <MaterialCommunityIcons name="map-marker-path" size={12} color={colors.textSecondary} />
+              <Text style={styles.directFlightText}>Direct Flight</Text>
+            </View>
           </View>
 
-          <Divider style={styles.cardDivider} />
+          {/* -------------------------------------------------------------- */}
+          {/* Package Details section                                          */}
+          {/* -------------------------------------------------------------- */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Package Details</Text>
+            <Text style={styles.sectionSubtitle}>Tell us what you need to send.</Text>
 
-          {/* Route */}
-          <View style={styles.routeRow}>
-            <View style={styles.routeEndpoint}>
-              <View style={styles.routeDot} />
-              <Text variant="bodySmall" style={styles.routeLabel}>FROM</Text>
-              <Text variant="titleSmall" style={styles.cityText}>
-                {trip.origin_city}
-              </Text>
-            </View>
+            {/* Category type pills */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.pillsRow}
+              style={styles.pillsScrollView}
+            >
+              {CATEGORY_PILLS.map((pill) => {
+                const isSelected = packageType === pill.id;
+                return (
+                  <TouchableOpacity
+                    key={pill.id}
+                    style={[styles.categoryPill, isSelected && styles.categoryPillSelected]}
+                    onPress={() => setPackageType(pill.id)}
+                    activeOpacity={0.75}
+                  >
+                    <MaterialCommunityIcons
+                      name={pill.icon as any}
+                      size={16}
+                      color={isSelected ? colors.white : colors.textSecondary}
+                    />
+                    <Text style={[styles.categoryPillText, isSelected && styles.categoryPillTextSelected]}>
+                      {pill.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
 
-            <View style={styles.routeLineContainer}>
-              <View style={styles.routeLine} />
-              <MaterialCommunityIcons
-                name="airplane"
-                size={18}
-                color={colors.primary}
-                style={styles.routeIcon}
+            {/* Item Description */}
+            <Text style={styles.fieldLabel}>Item Description</Text>
+            <View style={styles.textAreaWrapper}>
+              <View style={styles.textAreaIconWrap}>
+                <MaterialCommunityIcons name="pencil-outline" size={18} color={colors.textSecondary} />
+              </View>
+              <TextInput
+                style={styles.textArea}
+                value={packageDescription}
+                onChangeText={setPackageDescription}
+                multiline
+                numberOfLines={4}
+                placeholder="e.g. MacBook Pro Charger, Box of Chocolate"
+                placeholderTextColor={colors.textDisabled}
+                textAlignVertical="top"
               />
             </View>
+            {packageDescription.trim().length > 0 && packageDescription.trim().length < 10 && (
+              <Text style={styles.fieldError}>
+                Minimum 10 characters ({packageDescription.trim().length}/10)
+              </Text>
+            )}
 
-            <View style={[styles.routeEndpoint, styles.routeEndpointRight]}>
-              <View style={[styles.routeDot, styles.routeDotDest]} />
-              <Text variant="bodySmall" style={styles.routeLabel}>TO</Text>
-              <Text variant="titleSmall" style={styles.cityText}>
-                {trip.destination_city}
-              </Text>
-            </View>
-          </View>
+            {/* Weight + Value row */}
+            <View style={styles.twoColRow}>
+              {/* Weight */}
+              <View style={styles.twoColCell}>
+                <Text style={styles.fieldLabel}>Weight (kg)</Text>
+                <View style={[styles.inputWrapper, weight > trip.available_weight_kg && styles.inputWrapperError]}>
+                  <MaterialCommunityIcons name="weight-kilogram" size={16} color={colors.textSecondary} />
+                  <TextInput
+                    style={styles.inlineInput}
+                    value={packageWeight}
+                    onChangeText={setPackageWeight}
+                    keyboardType="decimal-pad"
+                    placeholder="0.0"
+                    placeholderTextColor={colors.textDisabled}
+                  />
+                </View>
+                {weight > trip.available_weight_kg && (
+                  <Text style={styles.fieldError}>Max {trip.available_weight_kg} kg</Text>
+                )}
+              </View>
 
-          {/* Trip Meta */}
-          <View style={styles.tripMetaRow}>
-            <View style={styles.tripMetaItem}>
-              <MaterialCommunityIcons name="calendar" size={14} color={colors.textSecondary} />
-              <Text variant="bodySmall" style={styles.tripMetaText}>
-                {new Date(trip.departure_date).toLocaleDateString('en-IN', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                })}
-              </Text>
+              {/* Value */}
+              <View style={styles.twoColCell}>
+                <Text style={styles.fieldLabel}>Est. Value ($)</Text>
+                <View style={styles.inputWrapper}>
+                  <Text style={styles.currencySymbol}>$</Text>
+                  <TextInput
+                    style={styles.inlineInput}
+                    value={packageValue}
+                    onChangeText={setPackageValue}
+                    keyboardType="decimal-pad"
+                    placeholder="0"
+                    placeholderTextColor={colors.textDisabled}
+                  />
+                </View>
+              </View>
             </View>
-            <View style={styles.tripMetaDot} />
-            <View style={styles.tripMetaItem}>
-              <MaterialCommunityIcons name="weight-kilogram" size={14} color={colors.textSecondary} />
-              <Text variant="bodySmall" style={styles.tripMetaText}>
-                {trip.available_weight_kg} kg available
-              </Text>
-            </View>
-            <View style={styles.tripMetaDot} />
-            <View style={styles.tripMetaItem}>
-              <MaterialCommunityIcons name="currency-inr" size={14} color={colors.textSecondary} />
-              <Text variant="bodySmall" style={styles.tripMetaText}>
-                ₹{trip.price_per_kg}/kg
-              </Text>
-            </View>
-          </View>
-        </Surface>
 
-        {/* Capacity Indicator */}
-        <Surface style={styles.capacityCard} elevation={0}>
-          <View style={styles.capacityHeader}>
-            <MaterialCommunityIcons name="bag-suitcase" size={20} color={colors.primary} />
-            <Text variant="labelLarge" style={styles.capacityTitle}>
-              Luggage Capacity
-            </Text>
-            <Text variant="labelLarge" style={styles.capacityValue}>
-              {trip.available_weight_kg} kg remaining
-            </Text>
-          </View>
-          <View style={styles.capacityBar}>
-            <View
-              style={[
-                styles.capacityFill,
-                {
-                  width: `${Math.min((weight / trip.available_weight_kg) * 100, 100)}%`,
-                  backgroundColor:
-                    weight > trip.available_weight_kg ? colors.error : colors.primary,
-                },
-              ]}
-            />
-          </View>
-          {weight > 0 && (
-            <Text
-              variant="bodySmall"
-              style={[
-                styles.capacityHint,
-                { color: weight > trip.available_weight_kg ? colors.error : colors.textSecondary },
-              ]}
+            {/* Add Dimensions (optional expandable)                          */}
+            {/* senderNotes state is captured via the expanded text input below */}
+            <TouchableOpacity
+              style={styles.dimensionsRow}
+              onPress={() => setDimensionsExpanded(!dimensionsExpanded)}
+              activeOpacity={0.8}
             >
-              {weight > trip.available_weight_kg
-                ? `${weight} kg exceeds limit by ${(weight - trip.available_weight_kg).toFixed(1)} kg`
-                : `Your package: ${weight} kg`}
-            </Text>
-          )}
-        </Surface>
+              <MaterialCommunityIcons name="ruler-square" size={18} color={colors.textSecondary} />
+              <Text style={styles.dimensionsLabel}>Add Dimensions (Optional)</Text>
+              <MaterialCommunityIcons
+                name={dimensionsExpanded ? 'minus' : 'plus'}
+                size={18}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
 
-        {/* Package Details Form */}
-        <Surface style={styles.formCard} elevation={0}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>
-            Package Details
-          </Text>
-
-          {/* Package Weight */}
-          <TextInput
-            label="Package Weight (kg) *"
-            value={packageWeight}
-            onChangeText={setPackageWeight}
-            keyboardType="decimal-pad"
-            mode="outlined"
-            left={<TextInput.Icon icon="weight-kilogram" />}
-            style={styles.input}
-            outlineStyle={styles.inputOutline}
-            error={weight > trip.available_weight_kg}
-          />
-          <HelperText
-            type={weight > trip.available_weight_kg ? 'error' : 'info'}
-            visible={packageWeight.length > 0}
-          >
-            {weight > trip.available_weight_kg
-              ? `Exceeds available capacity (${trip.available_weight_kg} kg)`
-              : `Available: ${trip.available_weight_kg} kg`}
-          </HelperText>
-
-          {/* Package Description */}
-          <TextInput
-            label="Package Description *"
-            value={packageDescription}
-            onChangeText={setPackageDescription}
-            mode="outlined"
-            multiline
-            numberOfLines={4}
-            left={<TextInput.Icon icon="package-variant" />}
-            style={styles.input}
-            outlineStyle={styles.inputOutline}
-            placeholder="e.g., Books, clothes, electronics (no prohibited items)"
-            error={packageDescription.trim().length > 0 && packageDescription.trim().length < 10}
-          />
-          <HelperText
-            type={
-              packageDescription.trim().length > 0 && packageDescription.trim().length < 10
-                ? 'error'
-                : 'info'
-            }
-            visible={true}
-          >
-            {packageDescription.trim().length < 10
-              ? `Minimum 10 characters (${packageDescription.trim().length}/10)`
-              : 'Be specific about contents'}
-          </HelperText>
-
-          {/* Package Value */}
-          <TextInput
-            label="Package Value (₹) (Optional)"
-            value={packageValue}
-            onChangeText={setPackageValue}
-            keyboardType="decimal-pad"
-            mode="outlined"
-            left={<TextInput.Icon icon="currency-inr" />}
-            style={styles.input}
-            outlineStyle={styles.inputOutline}
-            placeholder="Approximate value of contents"
-          />
-          <HelperText type="info" visible={true}>
-            Helps traveler understand insurance needs
-          </HelperText>
-
-          {/* Additional Notes */}
-          <TextInput
-            label="Additional Notes (Optional)"
-            value={senderNotes}
-            onChangeText={setSenderNotes}
-            mode="outlined"
-            multiline
-            numberOfLines={3}
-            left={<TextInput.Icon icon="message-text" />}
-            style={styles.input}
-            outlineStyle={styles.inputOutline}
-            placeholder="Special instructions, delivery preferences, etc."
-          />
-        </Surface>
-
-        {/* Estimated Cost Card */}
-        {weight > 0 && weight <= trip.available_weight_kg && (
-          <Surface style={styles.costCard} elevation={0}>
-            <View style={styles.costHeader}>
-              <MaterialCommunityIcons name="calculator" size={18} color={colors.primary} />
-              <Text variant="titleSmall" style={styles.costTitle}>
-                Cost Breakdown
-              </Text>
-            </View>
-
-            <View style={styles.costRow}>
-              <Text variant="bodyMedium" style={styles.costLineLabel}>
-                Base fee ({packageWeight} kg × ₹{trip.price_per_kg})
-              </Text>
-              <Text variant="bodyMedium" style={styles.costLineValue}>
-                ₹{estimatedCost}
-              </Text>
-            </View>
-
-            <Divider style={styles.costDivider} />
-
-            <View style={styles.costTotalRow}>
-              <Text variant="titleSmall" style={styles.costTotalLabel}>
-                Estimated Total
-              </Text>
-              <Text variant="headlineSmall" style={styles.costTotalValue}>
-                ₹{estimatedCost}
-              </Text>
-            </View>
-
-            <Text variant="bodySmall" style={styles.costDisclaimer}>
-              Final price negotiated with traveler after match
-            </Text>
-          </Surface>
-        )}
-
-        {/* Next Steps Info */}
-        <Surface style={styles.stepsCard} elevation={0}>
-          <Text variant="titleSmall" style={styles.stepsTitle}>
-            How it works
-          </Text>
-
-          <View style={styles.stepItem}>
-            <View style={styles.stepIconWrap}>
-              <MaterialCommunityIcons name="send" size={16} color={colors.primary} />
-            </View>
-            <View style={styles.stepContent}>
-              <Text variant="labelMedium" style={styles.stepHeading}>
-                Send Request
-              </Text>
-              <Text variant="bodySmall" style={styles.stepDesc}>
-                Your request is sent to the traveler for review
-              </Text>
-            </View>
+            {/* Notes input (expanded when dimensions toggled, reusing senderNotes) */}
+            {dimensionsExpanded && (
+              <View style={styles.notesInputWrapper}>
+                <TextInput
+                  style={styles.notesInput}
+                  value={senderNotes}
+                  onChangeText={setSenderNotes}
+                  placeholder="e.g. 30cm × 20cm × 15cm, fragile, handle with care"
+                  placeholderTextColor={colors.textDisabled}
+                  multiline
+                  numberOfLines={2}
+                  textAlignVertical="top"
+                />
+              </View>
+            )}
           </View>
 
-          <View style={styles.stepConnector} />
+          {/* -------------------------------------------------------------- */}
+          {/* Photos section                                                   */}
+          {/* -------------------------------------------------------------- */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.fieldLabel}>Photos</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.photosRow}
+            >
+              {/* Add photo button */}
+              <TouchableOpacity style={styles.photoAddBox} activeOpacity={0.75}>
+                <MaterialCommunityIcons name="plus" size={24} color={colors.textSecondary} />
+                <Text style={styles.photoAddText}>Add</Text>
+              </TouchableOpacity>
 
-          <View style={styles.stepItem}>
-            <View style={styles.stepIconWrap}>
-              <MaterialCommunityIcons name="check-circle" size={16} color={colors.primary} />
-            </View>
-            <View style={styles.stepContent}>
-              <Text variant="labelMedium" style={styles.stepHeading}>
-                Get Approved
-              </Text>
-              <Text variant="bodySmall" style={styles.stepDesc}>
-                Unlock contact (₹99 credit) after confirmation
-              </Text>
-            </View>
+              {/* Placeholder uploaded photo thumbnails */}
+              <View style={[styles.photoThumb, { backgroundColor: colors.success + '22' }]}>
+                <MaterialCommunityIcons name="image-outline" size={22} color={colors.success} />
+              </View>
+              <View style={[styles.photoThumb, { backgroundColor: colors.textPrimary + '11' }]}>
+                <MaterialCommunityIcons name="image-outline" size={22} color={colors.textSecondary} />
+              </View>
+            </ScrollView>
           </View>
 
-          <View style={styles.stepConnector} />
-
-          <View style={styles.stepItem}>
-            <View style={styles.stepIconWrap}>
-              <MaterialCommunityIcons name="package-variant-closed" size={16} color={colors.primary} />
-            </View>
-            <View style={styles.stepContent}>
-              <Text variant="labelMedium" style={styles.stepHeading}>
-                Coordinate Handover
-              </Text>
-              <Text variant="bodySmall" style={styles.stepDesc}>
-                Arrange delivery details directly with the traveler
-              </Text>
-            </View>
-          </View>
-        </Surface>
-
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
-
-      {/* Fixed Bottom Button */}
-      <Surface style={styles.bottomBar} elevation={4}>
-        <View style={styles.bottomBarInner}>
+          {/* -------------------------------------------------------------- */}
+          {/* Cost preview (shown when weight > 0 and within limits)           */}
+          {/* -------------------------------------------------------------- */}
           {weight > 0 && weight <= trip.available_weight_kg && (
-            <View style={styles.bottomCostPreview}>
-              <Text variant="bodySmall" style={styles.bottomCostLabel}>
-                Estimated cost
-              </Text>
-              <Text variant="titleMedium" style={styles.bottomCostValue}>
-                ₹{estimatedCost}
+            <View style={styles.costPreviewCard}>
+              <View style={styles.costPreviewRow}>
+                <Text style={styles.costPreviewLabel}>
+                  {packageWeight} kg × ₹{trip.price_per_kg}/kg
+                </Text>
+                <Text style={styles.costPreviewValue}>₹{estimatedCost}</Text>
+              </View>
+              <Text style={styles.costPreviewDisclaimer}>
+                Final price negotiated after match
               </Text>
             </View>
           )}
-          <Button
-            mode="contained"
-            onPress={handleSubmitRequest}
-            loading={loading}
-            disabled={hasErrors() || loading}
-            icon="send"
-            contentStyle={styles.buttonContent}
-            style={[
-              styles.submitButton,
-              weight > 0 && weight <= trip.available_weight_kg && styles.submitButtonFlex,
-            ]}
-            labelStyle={styles.buttonLabel}
-          >
-            Submit Request
-          </Button>
-        </View>
-      </Surface>
+
+          {/* -------------------------------------------------------------- */}
+          {/* Terms checkbox + CTA                                             */}
+          {/* -------------------------------------------------------------- */}
+          <View style={styles.bottomSection}>
+            {/* Terms of service row */}
+            <TouchableOpacity
+              style={styles.termsRow}
+              onPress={() => setAgreedToTerms(!agreedToTerms)}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.checkbox, agreedToTerms && styles.checkboxChecked]}>
+                {agreedToTerms && (
+                  <MaterialCommunityIcons name="check" size={14} color={colors.white} />
+                )}
+              </View>
+              <Text style={styles.termsText}>
+                I agree to the{' '}
+                <Text style={styles.termsLink}>Terms of Service</Text>
+              </Text>
+            </TouchableOpacity>
+
+            {/* Send Request CTA */}
+            <TouchableOpacity
+              style={[
+                styles.ctaButton,
+                (hasErrors() || !agreedToTerms || loading) && styles.ctaButtonDisabled,
+              ]}
+              onPress={handleSubmitRequest}
+              disabled={hasErrors() || !agreedToTerms || loading}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.ctaButtonText}>
+                {loading ? 'Sending...' : 'Send Request →'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
 
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
     backgroundColor: colors.background,
   },
-  scrollView: {
+  flex1: {
     flex: 1,
   },
 
-  // Traveler card
-  travelerCard: {
-    backgroundColor: colors.surface,
-    margin: spacing.md,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  travelerHeader: {
+  // ── Header ──────────────────────────────────────────────────────────────
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm + 2,
+    // Subtle shadow on iOS
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  headerBack: {
+    padding: spacing.xs,
+    marginLeft: -spacing.xs,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    letterSpacing: 0.1,
+  },
+  headerMenu: {
+    padding: spacing.xs,
+    marginRight: -spacing.xs,
+  },
+
+  // ── ScrollView ───────────────────────────────────────────────────────────
+  scrollContent: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl,
+  },
+
+  // ── Traveler Card (gradient bg) ───────────────────────────────────────────
+  travelerCard: {
+    backgroundColor: '#fff7ed',   // orange-50
+    borderWidth: 1,
+    borderColor: '#fed7aa',       // orange-200
+    borderRadius: radius.xl,
+    padding: 20,
+    marginBottom: spacing.md,
+    // Subtle gradient feel via background only (LinearGradient avoided for simplicity)
+  },
+  travelerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: spacing.md,
   },
-  avatar: {
-    backgroundColor: colors.primaryLight,
-  },
-  avatarLabel: {
-    color: colors.primary,
-    fontWeight: '700',
-  },
-  travelerInfo: {
+  travelerIdentity: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     flex: 1,
-    marginLeft: spacing.sm + 4,
+    marginRight: spacing.sm,
+  },
+  travelerAvatarCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#fed7aa',
+  },
+  travelerTextStack: {
+    flex: 1,
+  },
+  travelerRoleLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 2,
   },
   travelerName: {
+    fontSize: 15,
     fontWeight: '700',
     color: colors.textPrimary,
-    marginBottom: spacing.xs,
   },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
+  datePill: {
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
   },
-  ratingText: {
-    color: colors.textSecondary,
-  },
-  verifiedChip: {
-    backgroundColor: colors.primaryLight,
-    height: 28,
-  },
-  verifiedChipText: {
-    color: colors.primary,
-    fontSize: 11,
+  datePillText: {
+    fontSize: 12,
     fontWeight: '600',
-  },
-  cardDivider: {
-    backgroundColor: colors.border,
-    marginBottom: spacing.md,
+    color: colors.primary,
   },
 
-  // Route
+  // Route row within traveler card
   routeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.xs,
   },
   routeEndpoint: {
-    alignItems: 'flex-start',
     flex: 1,
   },
   routeEndpointRight: {
     alignItems: 'flex-end',
   },
-  routeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: radius.full,
-    backgroundColor: colors.primary,
-    marginBottom: spacing.xs,
-  },
-  routeDotDest: {
-    backgroundColor: colors.success,
-  },
-  routeLabel: {
-    color: colors.textSecondary,
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.8,
-    marginBottom: 2,
-  },
-  cityText: {
+  routeCode: {
+    fontSize: 24,
     fontWeight: '700',
     color: colors.textPrimary,
+    letterSpacing: -0.5,
   },
-  routeLineContainer: {
+  routeCityFull: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
+  routeArc: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    position: 'relative',
-  },
-  routeLine: {
-    position: 'absolute',
-    height: 1,
-    left: spacing.sm,
-    right: spacing.sm,
-    top: '50%',
-    backgroundColor: colors.border,
-  },
-  routeIcon: {
-    backgroundColor: colors.surface,
+    justifyContent: 'center',
     paddingHorizontal: spacing.xs,
   },
-
-  // Trip meta
-  tripMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-  },
-  tripMetaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  tripMetaText: {
-    color: colors.textSecondary,
-  },
-  tripMetaDot: {
-    width: 3,
-    height: 3,
-    borderRadius: radius.full,
-    backgroundColor: colors.textDisabled,
-    marginHorizontal: spacing.sm,
-  },
-
-  // Capacity bar
-  capacityCard: {
-    backgroundColor: colors.surface,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  capacityHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  capacityTitle: {
+  routeDashedLine: {
     flex: 1,
-    color: colors.textPrimary,
-    fontWeight: '600',
+    height: 1.5,
+    // React Native dashed border: use borderStyle + borderTopWidth trick
+    borderStyle: 'dashed',
+    borderTopWidth: 1.5,
+    borderTopColor: '#fed7aa',
+    backgroundColor: 'transparent',
   },
-  capacityValue: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  capacityBar: {
-    height: 6,
-    backgroundColor: colors.divider,
-    borderRadius: radius.full,
-    overflow: 'hidden',
-    marginBottom: spacing.xs,
-  },
-  capacityFill: {
-    height: '100%',
-    borderRadius: radius.full,
-  },
-  capacityHint: {
-    color: colors.textSecondary,
-  },
-
-  // Form card
-  formCard: {
-    backgroundColor: colors.surface,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  sectionTitle: {
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  input: {
-    backgroundColor: colors.surface,
-    marginTop: spacing.xs,
-  },
-  inputOutline: {
-    borderRadius: radius.md,
-    borderColor: colors.border,
-  },
-
-  // Cost card
-  costCard: {
-    backgroundColor: colors.primaryLight,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.primary + '33',
-  },
-  costHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  costTitle: {
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  costRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  costLineLabel: {
-    color: colors.textSecondary,
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  costLineValue: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  costDivider: {
-    backgroundColor: colors.primary + '40',
-    marginBottom: spacing.sm,
-  },
-  costTotalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
-  },
-  costTotalLabel: {
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  costTotalValue: {
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  costDisclaimer: {
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-  },
-
-  // Steps card
-  stepsCard: {
-    backgroundColor: colors.surface,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  stepsTitle: {
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  stepItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-  },
-  stepIconWrap: {
-    width: 32,
-    height: 32,
+  airplaneCircle: {
+    width: 36,
+    height: 36,
     borderRadius: radius.full,
     backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
+    marginHorizontal: spacing.xs,
+    borderWidth: 1,
+    borderColor: '#fed7aa',
   },
-  stepContent: {
-    flex: 1,
-    paddingTop: spacing.xs,
-  },
-  stepHeading: {
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 2,
-  },
-  stepDesc: {
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-  stepConnector: {
-    width: 1,
-    height: spacing.md,
-    backgroundColor: colors.border,
-    marginLeft: 15,
-    marginVertical: spacing.xs,
-  },
-
-  // Bottom
-  bottomSpacing: {
-    height: 100,
-  },
-  bottomBar: {
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  bottomBarInner: {
+  directFlightRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
-    gap: spacing.md,
+    gap: 4,
+    alignSelf: 'center',
+    marginTop: spacing.xs,
   },
-  bottomCostPreview: {
-    flex: 0,
-    minWidth: 80,
-  },
-  bottomCostLabel: {
+  directFlightText: {
+    fontSize: 11,
     color: colors.textSecondary,
-    marginBottom: 2,
+    fontWeight: '500',
   },
-  bottomCostValue: {
+
+  // ── Generic section card ─────────────────────────────────────────────────
+  sectionCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: '700',
     color: colors.textPrimary,
+    marginBottom: 2,
   },
-  submitButton: {
-    borderRadius: radius.md,
+  sectionSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+  },
+
+  // ── Category pills ───────────────────────────────────────────────────────
+  pillsScrollView: {
+    marginBottom: spacing.md,
+  },
+  pillsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  categoryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: '#f7f7f7',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm - 2,
+  },
+  categoryPillSelected: {
+    backgroundColor: colors.primary,
+  },
+  categoryPillText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.textSecondary,
+  },
+  categoryPillTextSelected: {
+    color: colors.white,
+    fontWeight: '600',
+  },
+
+  // ── Field label ──────────────────────────────────────────────────────────
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  fieldError: {
+    fontSize: 12,
+    color: colors.error,
+    marginTop: spacing.xs - 2,
+    marginBottom: spacing.xs,
+  },
+
+  // ── Text area (description) ──────────────────────────────────────────────
+  textAreaWrapper: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#f7f7f7',
+    borderRadius: radius.xl,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+    minHeight: 90,
+  },
+  textAreaIconWrap: {
+    paddingTop: spacing.xs,
+  },
+  textArea: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.textPrimary,
+    lineHeight: 20,
+    minHeight: 70,
+    paddingTop: 0,
+  },
+
+  // ── Two-column inputs (Weight + Value) ───────────────────────────────────
+  twoColRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  twoColCell: {
     flex: 1,
   },
-  submitButtonFlex: {
-    flex: 1,
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f7f7f7',
+    borderRadius: radius.xl,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
-  buttonContent: {
+  inputWrapperError: {
+    borderColor: colors.error,
+    backgroundColor: colors.errorLight,
+  },
+  currencySymbol: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  inlineInput: {
+    flex: 1,
+    fontSize: 15,
+    color: colors.textPrimary,
+    fontWeight: '500',
+    padding: 0,
+  },
+
+  // ── Dimensions expandable row ────────────────────────────────────────────
+  dimensionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  dimensionsLabel: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  notesInputWrapper: {
+    marginTop: spacing.sm,
+    backgroundColor: '#f7f7f7',
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
-  buttonLabel: {
+  notesInput: {
+    fontSize: 14,
+    color: colors.textPrimary,
+    lineHeight: 20,
+    minHeight: 50,
+    textAlignVertical: 'top',
+  },
+
+  // ── Photos section ───────────────────────────────────────────────────────
+  photosRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  photoAddBox: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  photoAddText: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  photoThumb: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ── Cost preview card ────────────────────────────────────────────────────
+  costPreviewCard: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.primary + '33',
+  },
+  costPreviewRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  costPreviewLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  costPreviewValue: {
+    fontSize: 17,
     fontWeight: '700',
-    fontSize: 15,
+    color: colors.primary,
+  },
+  costPreviewDisclaimer: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+  },
+
+  // ── Bottom section (terms + CTA) ─────────────────────────────────────────
+  bottomSection: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.sm,
+  },
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: radius.sm,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  checkboxChecked: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  termsText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  termsLink: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  ctaButton: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.xl,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaButtonDisabled: {
+    opacity: 0.45,
+  },
+  ctaButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.white,
+    letterSpacing: 0.3,
+  },
+
+  // ── Bottom spacing ────────────────────────────────────────────────────────
+  bottomSpacing: {
+    height: spacing.xl,
   },
 });

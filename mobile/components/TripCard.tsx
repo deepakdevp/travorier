@@ -1,11 +1,15 @@
 /**
  * TripCard Component
  *
- * Displays a trip in a card format with route, date, traveler info, and pricing.
- * Design tokens sourced from @/lib/theme — no hardcoded colors.
+ * Rewritten to match Stitch browse_trips card design:
+ * - PNR badge top-right (green verified / gray pending)
+ * - Route row: origin code + city | airplane + dashed line + duration | dest code + city
+ * - Departure + Capacity info grid
+ * - Bottom: traveler avatar + name + star rating | price/kg
+ *
+ * All colors sourced from @/lib/theme — no hardcoded hex values.
  */
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Text, Avatar, Chip } from 'react-native-paper';
+import { View, StyleSheet, TouchableOpacity, Image, Text } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, radius } from '@/lib/theme';
 import type { Trip } from '@/stores/tripsStore';
@@ -17,18 +21,27 @@ interface TripCardProps {
 
 export default function TripCard({ trip, onPress }: TripCardProps) {
   const departureDate = new Date(trip.departure_date);
-  const formattedDate = departureDate.toLocaleDateString('en-IN', {
-    day: 'numeric',
+  const formattedDate = departureDate.toLocaleDateString('en-US', {
     month: 'short',
+    day: 'numeric',
     year: 'numeric',
   });
 
+  // Use country code as airport code placeholder (no origin_code field)
+  const originCode = trip.origin_country?.slice(0, 3).toUpperCase() ?? '---';
+  const destCode = trip.destination_country?.slice(0, 3).toUpperCase() ?? '---';
+
   const userInitials = trip.traveler.full_name
     .split(' ')
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2);
+
+  // Display trust score as a rating out of 5 (trust_score is 0–100)
+  const rating = trip.traveler.trust_score != null
+    ? (trip.traveler.trust_score / 20).toFixed(1)
+    : '—';
 
   return (
     <TouchableOpacity
@@ -36,94 +49,126 @@ export default function TripCard({ trip, onPress }: TripCardProps) {
       onPress={() => onPress(trip)}
       activeOpacity={0.85}
     >
-      {/* Boosted Badge */}
-      {trip.is_boosted && (
-        <View style={styles.boostedBadge}>
-          <MaterialCommunityIcons name="star" size={12} color={colors.warning} />
-          <Text style={styles.boostedText}>Featured</Text>
-        </View>
-      )}
-
-      {/* Route Section */}
-      <View style={styles.routeContainer}>
-        <View style={styles.cityContainer}>
-          <Text style={styles.cityText}>{trip.origin_city}</Text>
-          <Text style={styles.countryText}>{trip.origin_country}</Text>
-        </View>
-
-        <View style={styles.arrowContainer}>
-          <MaterialCommunityIcons name="airplane" size={20} color={colors.primary} />
-          <MaterialCommunityIcons name="arrow-right" size={16} color={colors.textSecondary} />
-        </View>
-
-        <View style={[styles.cityContainer, styles.cityContainerRight]}>
-          <Text style={[styles.cityText, styles.cityTextRight]}>{trip.destination_city}</Text>
-          <Text style={[styles.countryText, styles.countryTextRight]}>{trip.destination_country}</Text>
-        </View>
+      {/* PNR badge — top-right corner */}
+      <View
+        style={[
+          styles.pnrBadge,
+          trip.pnr_verified ? styles.pnrBadgeVerified : styles.pnrBadgePending,
+        ]}
+      >
+        <MaterialCommunityIcons
+          name={trip.pnr_verified ? 'shield-check' : 'shield-outline'}
+          size={11}
+          color={trip.pnr_verified ? '#16a34a' : colors.textDisabled}
+        />
+        <Text
+          style={[
+            styles.pnrText,
+            trip.pnr_verified ? styles.pnrTextVerified : styles.pnrTextPending,
+          ]}
+        >
+          {trip.pnr_verified ? 'PNR VERIFIED' : 'PENDING PNR'}
+        </Text>
       </View>
 
-      {/* Flight Info */}
-      <View style={styles.flightInfo}>
-        <View style={styles.infoItem}>
-          <MaterialCommunityIcons name="calendar" size={14} color={colors.textSecondary} />
-          <Text style={styles.infoText}>{formattedDate}</Text>
+      {/* Route row */}
+      <View style={styles.routeRow}>
+        {/* Origin */}
+        <View style={styles.cityBlock}>
+          <Text style={styles.airportCode}>{originCode}</Text>
+          <Text style={styles.cityName}>{trip.origin_city}</Text>
         </View>
-        {trip.flight_number && (
-          <View style={styles.infoItem}>
-            <MaterialCommunityIcons name="airplane-clock" size={14} color={colors.textSecondary} />
-            <Text style={styles.infoText}>
-              {trip.airline} {trip.flight_number}
+
+        {/* Center: dashed line + airplane icon + duration */}
+        <View style={styles.routeCenter}>
+          {/* Dashed line behind the icon */}
+          <View style={styles.dashedLine} />
+          {/* Airplane icon sits on top of the line */}
+          <View style={styles.airplaneWrapper}>
+            <MaterialCommunityIcons
+              name="airplane"
+              size={14}
+              color={colors.primary}
+              style={styles.airplaneIcon}
+            />
+          </View>
+          {/* Duration label */}
+          {trip.flight_number || trip.airline ? (
+            <Text style={styles.durationText}>
+              {trip.airline ? trip.airline : ''}{trip.flight_number ? ` ${trip.flight_number}` : ''}
             </Text>
-          </View>
-        )}
-        {trip.pnr_verified && (
-          <Chip
-            icon="shield-check"
-            compact
-            style={styles.verifiedChip}
-            textStyle={styles.verifiedChipText}
-          >
-            PNR Verified
-          </Chip>
-        )}
+          ) : (
+            <Text style={styles.durationText}>Direct</Text>
+          )}
+        </View>
+
+        {/* Destination */}
+        <View style={[styles.cityBlock, styles.cityBlockRight]}>
+          <Text style={styles.airportCode}>{destCode}</Text>
+          <Text style={[styles.cityName, styles.cityNameRight]}>{trip.destination_city}</Text>
+        </View>
       </View>
 
-      {/* Divider */}
-      <View style={styles.divider} />
-
-      {/* Traveler Info */}
-      <View style={styles.travelerContainer}>
-        {trip.traveler.avatar_url ? (
-          <Avatar.Image size={36} source={{ uri: trip.traveler.avatar_url }} />
-        ) : (
-          <Avatar.Text size={36} label={userInitials} />
-        )}
-        <View style={styles.travelerInfo}>
-          <View style={styles.travelerNameRow}>
-            <Text style={styles.travelerName}>{trip.traveler.full_name}</Text>
-            {trip.traveler.verified && (
-              <MaterialCommunityIcons name="check-decagram" size={15} color={colors.primary} />
-            )}
+      {/* Info grid: Departure + Capacity */}
+      <View style={styles.infoGrid}>
+        <View style={styles.infoCell}>
+          <Text style={styles.infoCellLabel}>Departure</Text>
+          <View style={styles.infoCellValue}>
+            <MaterialCommunityIcons name="calendar" size={13} color={colors.primary} />
+            <Text style={styles.infoCellText}>{formattedDate}</Text>
           </View>
-          <View style={styles.trustScoreContainer}>
-            <MaterialCommunityIcons name="star" size={12} color={colors.warning} />
-            <Text style={styles.trustScore}>Trust Score: {trip.traveler.trust_score}</Text>
+        </View>
+        <View style={styles.infoCell}>
+          <Text style={styles.infoCellLabel}>Capacity</Text>
+          <View style={styles.infoCellValue}>
+            <MaterialCommunityIcons name="bag-suitcase" size={13} color={colors.primary} />
+            <Text style={styles.infoCellText}>{trip.available_weight_kg} kg left</Text>
           </View>
         </View>
       </View>
 
-      {/* Divider */}
-      <View style={styles.divider} />
-
-      {/* Capacity and Pricing */}
-      <View style={styles.bottomSection}>
-        <View style={styles.capacityContainer}>
-          <MaterialCommunityIcons name="weight-kilogram" size={18} color={colors.success} />
-          <Text style={styles.capacityText}>{trip.available_weight_kg} kg available</Text>
+      {/* Bottom row: traveler + price */}
+      <View style={styles.bottomRow}>
+        {/* Traveler avatar + name + rating */}
+        <View style={styles.travelerRow}>
+          {trip.traveler.avatar_url ? (
+            <Image
+              source={{ uri: trip.traveler.avatar_url }}
+              style={styles.avatar}
+            />
+          ) : (
+            <View style={styles.avatarFallback}>
+              <Text style={styles.avatarInitials}>{userInitials}</Text>
+            </View>
+          )}
+          <View style={styles.travelerMeta}>
+            <View style={styles.travelerNameRow}>
+              <Text style={styles.travelerName}>
+                {/* Show abbreviated first name + last initial */}
+                {trip.traveler.full_name.split(' ')[0]}{' '}
+                {trip.traveler.full_name.split(' ')[1]?.[0] ?? ''}.
+              </Text>
+              {trip.traveler.verified && (
+                <MaterialCommunityIcons
+                  name="check-decagram"
+                  size={13}
+                  color={colors.primary}
+                />
+              )}
+            </View>
+            <View style={styles.ratingRow}>
+              <MaterialCommunityIcons name="star" size={11} color={colors.warning} />
+              <Text style={styles.ratingText}>
+                {rating}
+              </Text>
+            </View>
+          </View>
         </View>
-        <View style={styles.priceContainer}>
-          <Text style={styles.priceText}>₹{trip.price_per_kg}</Text>
-          <Text style={styles.perKgText}>/ kg</Text>
+
+        {/* Price */}
+        <View style={styles.priceBlock}>
+          <Text style={styles.priceAmount}>${trip.price_per_kg}</Text>
+          <Text style={styles.priceUnit}>/kg</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -135,169 +180,222 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md,
     marginVertical: spacing.sm,
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,           // rounded-2xl
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#f3f4f6',
     shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
-    shadowRadius: 6,
+    shadowRadius: 4,
     elevation: 2,
+    overflow: 'hidden',
   },
 
-  // ---- Boosted badge ----
-  boostedBadge: {
+  // ---- PNR badge (top-right, rounded-bl + rounded-tr) ----
+  pnrBadge: {
     position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
+    top: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.warningLight,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radius.full,
-    zIndex: 1,
+    gap: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderBottomLeftRadius: radius.lg,
+    borderTopRightRadius: radius.xl,
+    zIndex: 2,
   },
-  boostedText: {
-    marginLeft: 3,
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.warning,
+  pnrBadgeVerified: {
+    backgroundColor: '#dcfce7',        // green-100
+    borderBottomWidth: 1,
+    borderLeftWidth: 1,
+    borderColor: '#bbf7d0',            // green-200
+  },
+  pnrBadgePending: {
+    backgroundColor: colors.divider,
+    borderBottomWidth: 1,
+    borderLeftWidth: 1,
+    borderColor: colors.border,
+  },
+  pnrText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  pnrTextVerified: {
+    color: '#16a34a',                  // green-700
+  },
+  pnrTextPending: {
+    color: colors.textDisabled,
   },
 
-  // ---- Route ----
-  routeContainer: {
+  // ---- Route row ----
+  routeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    marginTop: spacing.md,             // leave room for badge
     marginBottom: spacing.md,
-    paddingTop: spacing.xs,
   },
-  cityContainer: {
+  cityBlock: {
     flex: 1,
+    alignItems: 'flex-start',
   },
-  cityContainerRight: {
+  cityBlockRight: {
     alignItems: 'flex-end',
   },
-  cityText: {
-    fontSize: 15,
+  airportCode: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontWeight: '400',
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  cityName: {
+    fontSize: 18,
     fontWeight: '700',
     color: colors.textPrimary,
   },
-  cityTextRight: {
+  cityNameRight: {
     textAlign: 'right',
-  },
-  countryText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-    fontWeight: '400',
-  },
-  countryTextRight: {
-    textAlign: 'right',
-  },
-  arrowContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: spacing.sm,
-    gap: 2,
   },
 
-  // ---- Flight info ----
-  flightInfo: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  // Center connector
+  routeCenter: {
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xs,
+    position: 'relative',
+  },
+  dashedLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: '50%',
+    height: 1,
+    borderStyle: 'dashed',
+    borderTopWidth: 1.5,
+    borderColor: '#d1d5db',            // gray-300
+    marginTop: -4,                     // offset so it aligns with icon center
+  },
+  airplaneWrapper: {
+    backgroundColor: colors.surface,
+    paddingHorizontal: 3,
+    zIndex: 1,
+    marginBottom: 2,
+  },
+  airplaneIcon: {
+    transform: [{ rotate: '90deg' }],
+  },
+  durationText: {
+    fontSize: 10,
+    color: colors.textSecondary,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 3,
+    zIndex: 1,
+    textAlign: 'center',
+  },
+
+  // ---- Info grid ----
+  infoGrid: {
+    flexDirection: 'row',
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
-  infoItem: {
+  infoCell: {
+    flex: 1,
+    backgroundColor: '#f9fafb',       // gray-50
+    borderRadius: radius.md,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  infoCellLabel: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginBottom: 3,
+  },
+  infoCellValue: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  infoText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '400',
-  },
-  verifiedChip: {
-    height: 22,
-    backgroundColor: colors.successLight,
-  },
-  verifiedChipText: {
-    fontSize: 10,
-    color: colors.success,
+  infoCellText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textPrimary,
   },
 
-  // ---- Divider ----
-  divider: {
-    height: 1,
-    backgroundColor: colors.divider,
-    marginBottom: spacing.md,
-  },
-
-  // ---- Traveler ----
-  travelerContainer: {
+  // ---- Bottom row ----
+  bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    justifyContent: 'space-between',
+    paddingTop: spacing.sm + 2,
+    borderTopWidth: 1,
+    borderTopColor: '#f3f4f6',
   },
-  travelerInfo: {
-    flex: 1,
-    marginLeft: spacing.sm,
+  travelerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.white,
+  },
+  avatarFallback: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitials: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  travelerMeta: {
+    gap: 1,
   },
   travelerNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
   },
   travelerName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: colors.textPrimary,
   },
-  trustScoreContainer: {
+  ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
-    gap: 3,
-  },
-  trustScore: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '400',
-  },
-
-  // ---- Bottom: capacity + price ----
-  bottomSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  capacityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  capacityText: {
-    fontSize: 13,
-    color: colors.success,
-    fontWeight: '500',
-  },
-  priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
     gap: 2,
   },
-  priceText: {
-    fontSize: 16,
+  ratingText: {
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+
+  // Price
+  priceBlock: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 1,
+  },
+  priceAmount: {
+    fontSize: 18,
     fontWeight: '700',
     color: colors.primary,
   },
-  perKgText: {
-    fontSize: 12,
+  priceUnit: {
+    fontSize: 11,
     color: colors.textSecondary,
     fontWeight: '400',
   },

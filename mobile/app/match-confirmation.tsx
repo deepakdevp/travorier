@@ -1,254 +1,157 @@
 /**
  * Match Confirmation Screen
- * Success screen after submitting a request to carry
+ * "Request Sent Successfully" — matches Stitch design:
+ * projects/7580322135798196968/screens/77a90f99ad9b4730b2c5766003088b39
  */
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Button, Card, Divider } from 'react-native-paper';
+import React from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTripsStore } from '@/stores/tripsStore';
 import { colors, spacing, radius } from '@/lib/theme';
 
+const STEPS = [
+  {
+    title: 'Traveler Accepts Request',
+    desc: 'A verified traveler reviews and accepts your delivery offer.',
+    active: true,
+  },
+  {
+    title: 'Secure Payment',
+    desc: 'Funds are held in escrow until delivery is confirmed.',
+    active: false,
+  },
+  {
+    title: 'Handover & Transit',
+    desc: 'Meet the traveler to hand over the package.',
+    active: false,
+  },
+  {
+    title: 'Delivery & Release',
+    desc: 'Recipient confirms receipt and funds are released.',
+    active: false,
+  },
+];
+
 export default function MatchConfirmationScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { selectedTrip } = useTripsStore();
 
-  const handleUnlockContact = () => {
-    // In production, this would navigate to payment/credit flow
-    // For now, just show alert
-    alert('Payment/credit feature coming in next milestone');
+  const handleBrowseMore = () => {
+    router.replace('/(tabs)/trips');
   };
 
   const handleViewMatches = () => {
     router.replace('/(tabs)');
   };
 
-  const handleBrowseMore = () => {
-    router.replace('/(tabs)/trips');
-  };
-
   return (
     <ScrollView
-      style={styles.scrollView}
-      contentContainerStyle={styles.container}
+      style={styles.container}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.xl }]}
       showsVerticalScrollIndicator={false}
     >
-      {/* Success Icon */}
-      <View style={styles.iconWrapper}>
-        <View style={styles.iconCircleOuter}>
-          <View style={styles.iconCircleInner}>
-            <MaterialCommunityIcons name="check" size={48} color={colors.white} />
+      {/* Success icon — double ring */}
+      <View style={styles.iconWrap}>
+        <View style={styles.iconRingOuter}>
+          <View style={styles.iconRingInner}>
+            <MaterialCommunityIcons name="check" size={40} color="#ffffff" />
           </View>
         </View>
       </View>
 
-      {/* Success Message */}
-      <View style={styles.messageContainer}>
-        <Text variant="headlineMedium" style={styles.title}>
-          Request Sent!
-        </Text>
-        <Text variant="bodyLarge" style={styles.subtitle}>
-          Your request has been sent to the traveler.
-        </Text>
+      {/* Title + subtitle */}
+      <Text style={styles.title}>Request Sent{'\n'}Successfully!</Text>
+      <Text style={styles.subtitle}>
+        Your package request has been broadcasted to travelers heading your way.
+      </Text>
+
+      {/* What Happens Next card */}
+      <View style={styles.stepsCard}>
+        <Text style={styles.stepsHeader}>WHAT HAPPENS NEXT?</Text>
+
+        <View style={styles.stepsContainer}>
+          {/* Vertical connector line */}
+          <View style={styles.stepLine} />
+
+          {STEPS.map((step, index) => (
+            <View key={index} style={styles.stepRow}>
+              {/* Circle */}
+              <View
+                style={[
+                  styles.stepCircle,
+                  step.active ? styles.stepCircleActive : styles.stepCircleInactive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.stepNumber,
+                    step.active ? styles.stepNumberActive : styles.stepNumberInactive,
+                  ]}
+                >
+                  {index + 1}
+                </Text>
+              </View>
+
+              {/* Content */}
+              <View style={styles.stepBody}>
+                <Text style={styles.stepTitle}>{step.title}</Text>
+                <Text style={styles.stepDesc}>{step.desc}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
       </View>
 
-      {/* Trip Summary Card */}
-      {selectedTrip && (
-        <Card style={styles.tripCard} elevation={1}>
-          <Card.Content style={styles.tripCardContent}>
-            {/* Route */}
-            <View style={styles.routeRow}>
-              <View style={styles.cityBlock}>
-                <Text variant="bodySmall" style={styles.routeLabel}>From</Text>
-                <Text variant="titleMedium" style={styles.cityText}>
-                  {selectedTrip.origin_city}
-                </Text>
-              </View>
-              <View style={styles.routeArrowBlock}>
-                <MaterialCommunityIcons
-                  name="airplane"
-                  size={20}
-                  color={colors.primary}
-                />
-              </View>
-              <View style={[styles.cityBlock, styles.cityBlockRight]}>
-                <Text variant="bodySmall" style={styles.routeLabel}>To</Text>
-                <Text variant="titleMedium" style={styles.cityText}>
-                  {selectedTrip.destination_city}
-                </Text>
-              </View>
-            </View>
+      {/* Action buttons */}
+      <TouchableOpacity
+        style={styles.primaryButton}
+        onPress={handleBrowseMore}
+        activeOpacity={0.85}
+      >
+        <MaterialCommunityIcons name="compass-outline" size={20} color="#ffffff" />
+        <Text style={styles.primaryButtonText}>Browse More Trips</Text>
+      </TouchableOpacity>
 
-            <Divider style={styles.cardDivider} />
-
-            {/* Traveler & Date */}
-            <View style={styles.tripMeta}>
-              <View style={styles.metaItem}>
-                <MaterialCommunityIcons
-                  name="account-circle-outline"
-                  size={16}
-                  color={colors.textSecondary}
-                />
-                <Text variant="bodyMedium" style={styles.metaText}>
-                  {selectedTrip.traveler.full_name}
-                </Text>
-              </View>
-              <View style={styles.metaItem}>
-                <MaterialCommunityIcons
-                  name="calendar-outline"
-                  size={16}
-                  color={colors.textSecondary}
-                />
-                <Text variant="bodyMedium" style={styles.metaText}>
-                  {new Date(selectedTrip.departure_date).toLocaleDateString('en-IN', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })}
-                </Text>
-              </View>
-            </View>
-          </Card.Content>
-        </Card>
-      )}
-
-      {/* What Happens Next */}
-      <Card style={styles.stepsCard} elevation={1}>
-        <Card.Content>
-          <Text variant="titleMedium" style={styles.stepsTitle}>
-            What Happens Next?
-          </Text>
-
-          <View style={styles.stepItem}>
-            <View style={styles.stepIconContainer}>
-              <MaterialCommunityIcons name="timer-sand" size={22} color={colors.primary} />
-            </View>
-            <View style={styles.stepConnector} />
-            <View style={styles.stepContent}>
-              <Text variant="labelLarge" style={styles.stepTitle}>
-                Traveler Reviews Request
-              </Text>
-              <Text variant="bodySmall" style={styles.stepText}>
-                The traveler will review your request within 24 hours and confirm availability.
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.stepItem}>
-            <View style={styles.stepIconContainer}>
-              <MaterialCommunityIcons name="bell-ring-outline" size={22} color={colors.primary} />
-            </View>
-            <View style={styles.stepConnector} />
-            <View style={styles.stepContent}>
-              <Text variant="labelLarge" style={styles.stepTitle}>
-                Get Notified
-              </Text>
-              <Text variant="bodySmall" style={styles.stepText}>
-                You'll receive a notification the moment the traveler responds.
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.stepItem}>
-            <View style={styles.stepIconContainer}>
-              <MaterialCommunityIcons name="lock-open-outline" size={22} color={colors.primary} />
-            </View>
-            <View style={styles.stepConnector} />
-            <View style={styles.stepContent}>
-              <Text variant="labelLarge" style={styles.stepTitle}>
-                Unlock Contact
-              </Text>
-              <Text variant="bodySmall" style={styles.stepText}>
-                Use 1 credit (₹99) to unlock contact details and start chatting directly.
-              </Text>
-            </View>
-          </View>
-
-          <View style={[styles.stepItem, styles.stepItemLast]}>
-            <View style={styles.stepIconContainer}>
-              <MaterialCommunityIcons name="handshake-outline" size={22} color={colors.primary} />
-            </View>
-            <View style={styles.stepContent}>
-              <Text variant="labelLarge" style={styles.stepTitle}>
-                Coordinate Delivery
-              </Text>
-              <Text variant="bodySmall" style={styles.stepText}>
-                Discuss handover details, finalize the delivery fee, and arrange a meeting point.
-              </Text>
-            </View>
-          </View>
-        </Card.Content>
-      </Card>
-
-      {/* Action Buttons */}
-      <View style={styles.actionsContainer}>
-        <Button
-          mode="contained"
-          onPress={handleUnlockContact}
-          icon="lock-open-outline"
-          style={styles.primaryButton}
-          contentStyle={styles.buttonContent}
-          labelStyle={styles.primaryButtonLabel}
-        >
-          Unlock Contact (1 Credit)
-        </Button>
-
-        <Button
-          mode="contained-tonal"
-          onPress={handleViewMatches}
-          icon="home-outline"
-          style={styles.tonalButton}
-          contentStyle={styles.buttonContent}
-        >
-          Go to Homepage
-        </Button>
-
-        <Button
-          mode="outlined"
-          onPress={handleBrowseMore}
-          style={styles.outlinedButton}
-          contentStyle={styles.buttonContent}
-        >
-          Browse More Trips
-        </Button>
-      </View>
-
-      {/* Info Note */}
-      <View style={styles.infoNote}>
-        <MaterialCommunityIcons name="information-outline" size={15} color={colors.textSecondary} />
-        <Text variant="bodySmall" style={styles.infoText}>
-          View all your matches and messages in the Profile tab.
-        </Text>
-      </View>
+      <TouchableOpacity
+        style={styles.secondaryButton}
+        onPress={handleViewMatches}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.secondaryButtonText}>Go to Homepage</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   container: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.xl,
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
+  content: {
+    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
+    alignItems: 'center',
   },
 
   // ── Success icon ──────────────────────────────────────────────────────────
-  iconWrapper: {
+  iconWrap: {
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
-  iconCircleOuter: {
-    width: 112,
-    height: 112,
+  iconRingOuter: {
+    width: 120,
+    height: 120,
     borderRadius: radius.full,
-    backgroundColor: colors.successLight,
+    backgroundColor: '#d1fae5',   // green-100
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconCircleInner: {
+  iconRingInner: {
     width: 80,
     height: 80,
     borderRadius: radius.full,
@@ -257,163 +160,143 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // ── Message ───────────────────────────────────────────────────────────────
-  messageContainer: {
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
+  // ── Heading ───────────────────────────────────────────────────────────────
   title: {
+    fontSize: 28,
     fontWeight: '700',
-    color: colors.success,
+    color: '#111827',
     textAlign: 'center',
-    marginBottom: spacing.xs,
+    lineHeight: 34,
+    marginBottom: spacing.md,
   },
   subtitle: {
-    color: colors.textSecondary,
+    fontSize: 15,
+    color: '#6b7280',
     textAlign: 'center',
-    paddingHorizontal: spacing.lg,
     lineHeight: 22,
-  },
-
-  // ── Trip card ─────────────────────────────────────────────────────────────
-  tripCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  tripCardContent: {
-    paddingVertical: spacing.md,
-  },
-  routeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  cityBlock: {
-    flex: 1,
-  },
-  cityBlockRight: {
-    alignItems: 'flex-end',
-  },
-  routeArrowBlock: {
-    paddingHorizontal: spacing.sm,
-  },
-  routeLabel: {
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  cityText: {
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  cardDivider: {
-    marginBottom: spacing.md,
-    backgroundColor: colors.divider,
-  },
-  tripMeta: {
-    gap: spacing.sm,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  metaText: {
-    color: colors.textSecondary,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.xl,
   },
 
   // ── Steps card ────────────────────────────────────────────────────────────
   stepsCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    marginBottom: spacing.lg,
+    width: '100%',
+    backgroundColor: '#ffffff',
+    borderRadius: radius.xl,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#f3f4f6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  stepsTitle: {
+  stepsHeader: {
+    fontSize: 11,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: '#6b7280',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
     marginBottom: spacing.md,
   },
-  stepItem: {
-    flexDirection: 'row',
-    marginBottom: spacing.sm,
+  stepsContainer: {
     position: 'relative',
   },
-  stepItemLast: {
-    marginBottom: 0,
+  stepLine: {
+    position: 'absolute',
+    left: 19,
+    top: 40,
+    bottom: 40,
+    width: 2,
+    backgroundColor: '#e5e7eb',
+    zIndex: 0,
   },
-  stepIconContainer: {
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  stepCircle: {
     width: 40,
     height: 40,
     borderRadius: radius.full,
-    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    zIndex: 1,
     flexShrink: 0,
   },
-  stepConnector: {
-    position: 'absolute',
-    left: 19,
-    top: 44,
-    width: 2,
-    height: spacing.sm + 4,
-    backgroundColor: colors.divider,
+  stepCircleActive: {
+    backgroundColor: colors.success,
   },
-  stepContent: {
+  stepCircleInactive: {
+    backgroundColor: '#ffffff',
+    borderWidth: 2,
+    borderColor: '#d1d5db',
+  },
+  stepNumber: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  stepNumberActive: {
+    color: '#ffffff',
+  },
+  stepNumberInactive: {
+    color: '#9ca3af',
+  },
+  stepBody: {
     flex: 1,
-    paddingBottom: spacing.md,
+    paddingTop: 6,
   },
   stepTitle: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-    marginBottom: spacing.xs,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 4,
   },
-  stepText: {
-    color: colors.textSecondary,
+  stepDesc: {
+    fontSize: 13,
+    color: '#6b7280',
     lineHeight: 18,
   },
 
   // ── Buttons ───────────────────────────────────────────────────────────────
-  actionsContainer: {
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
   primaryButton: {
-    borderRadius: radius.md,
-    backgroundColor: colors.success,
-  },
-  primaryButtonLabel: {
-    color: colors.white,
-  },
-  tonalButton: {
-    borderRadius: radius.md,
-  },
-  outlinedButton: {
-    borderRadius: radius.md,
-  },
-  buttonContent: {
-    paddingVertical: spacing.xs,
-  },
-
-  // ── Info note ─────────────────────────────────────────────────────────────
-  infoNote: {
+    width: '100%',
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+    backgroundColor: colors.success,
+    borderRadius: radius.xl,
+    paddingVertical: spacing.md + 2,
+    marginBottom: spacing.sm,
+    shadowColor: colors.success,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  infoText: {
-    color: colors.textSecondary,
-    textAlign: 'center',
-    flex: 1,
-    lineHeight: 18,
+  primaryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  secondaryButton: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: radius.xl,
+    paddingVertical: spacing.md + 2,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  secondaryButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#111827',
   },
 });

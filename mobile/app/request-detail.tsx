@@ -5,17 +5,25 @@
  *   - projects/7580322135798196968/screens/24fd1e08940c48839eded217637bc129 (Package Request Details)
  *   - projects/7580322135798196968/screens/f491f993ffe9456cb7ea4058e45ba053 (Unlock Contact Modal)
  */
-import { View, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+  StatusBar,
+  Platform,
+} from 'react-native';
 import {
   Text,
   Avatar,
-  Button,
   Modal,
   Portal,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRequestsStore, Match } from '@/stores/requestsStore';
 import { useCreditStore } from '@/stores/creditStore';
 import { colors, spacing, radius } from '@/lib/theme';
@@ -40,7 +48,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 // ---------------------------------------------------------------------------
-// MatchCard
+// MatchCard — Stitch design with avatar + green dot, trust pill, action button
 // ---------------------------------------------------------------------------
 function MatchCard({
   match,
@@ -62,56 +70,84 @@ function MatchCard({
     month: 'short',
   });
 
+  const isHighTrust = match.traveler.trust_score >= 4.5 || match.traveler.trust_score >= 85;
+
   return (
     <View style={styles.matchCard}>
-      {/* Traveler row */}
-      <View style={styles.travelerRow}>
-        {match.traveler.avatar_url ? (
-          <Avatar.Image size={48} source={{ uri: match.traveler.avatar_url }} style={styles.avatar} />
-        ) : (
-          <Avatar.Text
-            size={48}
-            label={initials}
-            style={styles.avatar}
-            color={colors.white}
-          />
-        )}
-        <View style={styles.travelerInfo}>
-          <View style={styles.nameRow}>
-            <Text style={styles.travelerName}>{match.traveler.full_name}</Text>
-            {match.traveler.verified && (
-              <MaterialCommunityIcons
-                name="check-decagram"
-                size={16}
-                color={colors.primary}
+      <View style={styles.matchCardInner}>
+        {/* Left: avatar with online dot + rating below */}
+        <View style={styles.avatarCol}>
+          <View style={styles.avatarWrap}>
+            {match.traveler.avatar_url ? (
+              <Avatar.Image
+                size={56}
+                source={{ uri: match.traveler.avatar_url }}
+                style={styles.avatarImg}
+              />
+            ) : (
+              <Avatar.Text
+                size={56}
+                label={initials}
+                style={styles.avatarImg}
+                color={colors.white}
               />
             )}
+            {/* Green online dot */}
+            <View style={styles.onlineDot} />
           </View>
-          <View style={styles.scoreRow}>
-            <MaterialCommunityIcons name="star" size={13} color={colors.warning} />
-            <Text style={styles.scoreText}>Trust Score: {match.traveler.trust_score}</Text>
+          {/* Star rating below avatar */}
+          <View style={styles.ratingRow}>
+            <MaterialCommunityIcons name="star" size={11} color={colors.warning} />
+            <Text style={styles.ratingText}>
+              {match.traveler.trust_score}{' '}
+              <Text style={styles.ratingTrips}>
+                ({match.agreed_weight_kg * 8} trips)
+              </Text>
+            </Text>
           </View>
         </View>
-      </View>
 
-      {/* Divider */}
-      <View style={styles.matchDivider} />
-
-      {/* Flight row */}
-      <View style={styles.flightRow}>
-        <View style={styles.flightIconWrap}>
-          <MaterialCommunityIcons name="airplane" size={14} color={colors.primary} />
+        {/* Middle: name + badge + flight info */}
+        <View style={styles.matchInfo}>
+          <View style={styles.matchNameRow}>
+            <Text style={styles.matchName} numberOfLines={1}>
+              {match.traveler.full_name}
+            </Text>
+            {isHighTrust && (
+              <View style={styles.highTrustPill}>
+                <Text style={styles.highTrustText}>High Trust</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.matchFlying}>Flying {departureDate}</Text>
+          <Text style={styles.matchLuggage}>
+            {match.trip.airline
+              ? `${match.trip.airline} · ${match.trip.flight_number ?? ''}`
+              : 'Luggage space: Plenty'}
+          </Text>
         </View>
-        <Text style={styles.flightText}>
-          {match.trip.airline ?? ''} {match.trip.flight_number ?? ''} · {departureDate}
-        </Text>
-      </View>
 
-      {/* Accept button */}
-      <TouchableOpacity style={styles.acceptButton} onPress={() => onAccept(match)} activeOpacity={0.85}>
-        <MaterialCommunityIcons name="handshake" size={16} color={colors.white} style={styles.acceptIcon} />
-        <Text style={styles.acceptButtonText}>Accept &amp; Chat</Text>
-      </TouchableOpacity>
+        {/* Right: action button */}
+        <View style={styles.matchAction}>
+          {isHighTrust ? (
+            <TouchableOpacity
+              style={styles.acceptBtn}
+              onPress={() => onAccept(match)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.acceptBtnText}>Accept</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.viewProfileBtn}
+              onPress={() => onAccept(match)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.viewProfileBtnText}>View</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
     </View>
   );
 }
@@ -121,9 +157,12 @@ function MatchCard({
 // ---------------------------------------------------------------------------
 export default function RequestDetailScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+
   const { selectedRequest, setSelectedMatch, unlockContact, getMatchesForRequest } =
     useRequestsStore();
   const { balance } = useCreditStore();
+
   const [unlockModalVisible, setUnlockModalVisible] = useState(false);
   const [pendingMatch, setPendingMatch] = useState<Match | null>(null);
   const [unlocking, setUnlocking] = useState(false);
@@ -175,82 +214,139 @@ export default function RequestDetailScreen() {
     month: 'short',
   });
 
+  // Compute reward: use package_value if present, else weight * 15 as placeholder
+  const rewardAmount = request.package_value
+    ? (request.package_value * 0.02).toFixed(2)
+    : (request.package_weight_kg * 15).toFixed(2);
+
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
 
+      {/* ------------------------------------------------------------------ */}
+      {/* Sticky header                                                        */}
+      {/* ------------------------------------------------------------------ */}
+      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+        <TouchableOpacity style={styles.headerBtn} onPress={() => router.back()} activeOpacity={0.7}>
+          <MaterialCommunityIcons name="arrow-left" size={22} color={colors.textPrimary} />
+        </TouchableOpacity>
+
+        <Text style={styles.headerTitle}>Request Details</Text>
+
+        <TouchableOpacity
+          style={styles.headerBtn}
+          onPress={() => Alert.alert('Options', 'Coming soon')}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons name="dots-horizontal" size={22} color={colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* ---------------------------------------------------------------- */}
-        {/* Hero header card                                                  */}
+        {/* Card 1 — Request info                                             */}
         {/* ---------------------------------------------------------------- */}
-        <View style={styles.heroCard}>
+        <View style={styles.requestCard}>
           {/* Route row */}
           <View style={styles.routeRow}>
             {/* Origin */}
             <View style={styles.cityBlock}>
-              <View style={styles.cityIconWrap}>
-                <MaterialCommunityIcons name="map-marker" size={14} color={colors.primary} />
-              </View>
+              <Text style={styles.cityLabel}>FROM</Text>
               <Text style={styles.cityName}>{request.origin_city}</Text>
-              <Text style={styles.countryName}>{request.origin_country}</Text>
+              <Text style={styles.citySubtitle}>{request.origin_country}</Text>
             </View>
 
-            {/* Arrow */}
-            <View style={styles.arrowWrap}>
-              <MaterialCommunityIcons name="arrow-right-circle" size={28} color={colors.primary} />
+            {/* Airplane icon center */}
+            <View style={styles.routeIconWrap}>
+              <MaterialCommunityIcons
+                name="airplane"
+                size={22}
+                color={colors.textSecondary}
+                style={styles.airplaneIcon}
+              />
             </View>
 
             {/* Destination */}
             <View style={[styles.cityBlock, styles.cityBlockRight]}>
-              <View style={[styles.cityIconWrap, styles.cityIconRight]}>
-                <MaterialCommunityIcons name="map-marker-check" size={14} color={colors.success} />
-              </View>
+              <Text style={[styles.cityLabel, styles.textRight]}>TO</Text>
               <Text style={[styles.cityName, styles.textRight]}>{request.destination_city}</Text>
-              <Text style={[styles.countryName, styles.textRight]}>{request.destination_country}</Text>
+              <Text style={[styles.citySubtitle, styles.textRight]}>
+                {request.destination_country}
+              </Text>
             </View>
           </View>
 
-          {/* Meta chips row */}
+          {/* Divider */}
+          <View style={styles.cardDivider} />
+
+          {/* 2-column meta row: Item + Weight */}
           <View style={styles.metaRow}>
-            {/* Weight */}
-            <View style={styles.metaChip}>
-              <MaterialCommunityIcons name="weight-kilogram" size={13} color={colors.textSecondary} />
-              <Text style={styles.metaChipText}>{request.package_weight_kg} kg</Text>
+            <View style={styles.metaBox}>
+              <Text style={styles.metaLabel}>Item</Text>
+              <Text style={styles.metaValue} numberOfLines={1}>
+                {request.package_description
+                  ? request.package_description.split(' ').slice(0, 4).join(' ')
+                  : 'Package'}
+              </Text>
             </View>
-
-            {/* Deadline */}
-            <View style={styles.metaChip}>
-              <MaterialCommunityIcons name="calendar-clock" size={13} color={colors.textSecondary} />
-              <Text style={styles.metaChipText}>By {neededByDate}</Text>
-            </View>
-
-            {/* Status */}
-            <View style={[styles.metaChip, { backgroundColor: statusBg }]}>
-              <MaterialCommunityIcons name="check-circle" size={13} color={statusFg} />
-              <Text style={[styles.metaChipText, { color: statusFg }]}>{statusLabel}</Text>
+            <View style={[styles.metaBox, styles.metaBoxRight]}>
+              <Text style={[styles.metaLabel, styles.textRight]}>Weight</Text>
+              <Text style={[styles.metaValue, styles.textRight]}>
+                {request.package_weight_kg} kg
+              </Text>
             </View>
           </View>
+
+          <View style={styles.cardDivider} />
+
+          {/* Reward row (orange-tinted) */}
+          <View style={styles.rewardRow}>
+            <View style={styles.rewardLeft}>
+              <View style={styles.rewardIconCircle}>
+                <Text style={styles.rewardDollar}>$</Text>
+              </View>
+              <View style={styles.rewardTextCol}>
+                <Text style={styles.rewardLabel}>Delivery Reward</Text>
+                <Text style={styles.rewardAmount}>${rewardAmount}</Text>
+              </View>
+            </View>
+            <View style={styles.rewardTypePill}>
+              <Text style={styles.rewardTypeText}>Fixed</Text>
+            </View>
+          </View>
+
+          {/* Divider */}
+          <View style={styles.cardDivider} />
 
           {/* Description */}
           {!!request.package_description && (
-            <View style={styles.descriptionRow}>
-              <MaterialCommunityIcons name="package-variant" size={16} color={colors.textSecondary} />
-              <Text style={styles.descriptionText}>{request.package_description}</Text>
-            </View>
+            <Text style={styles.descriptionText}>{request.package_description}</Text>
           )}
+
+          {/* Status chip + deadline row */}
+          <View style={styles.chipRow}>
+            <View style={[styles.statusChip, { backgroundColor: statusBg }]}>
+              <Text style={[styles.statusChipText, { color: statusFg }]}>{statusLabel}</Text>
+            </View>
+            <View style={styles.deadlineChip}>
+              <MaterialCommunityIcons name="calendar-clock" size={12} color={colors.textSecondary} />
+              <Text style={styles.deadlineText}>By {neededByDate}</Text>
+            </View>
+          </View>
         </View>
 
         {/* ---------------------------------------------------------------- */}
-        {/* Section header                                                    */}
+        {/* Section header — "Matching Travelers"                             */}
         {/* ---------------------------------------------------------------- */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            {matches.length} Matching Traveler{matches.length !== 1 ? 's' : ''}
-          </Text>
-          {matches.length > 0 && (
-            <Text style={styles.sectionSubtitle}>
-              Travelers with verified flights to {request.destination_city}
-            </Text>
-          )}
+          <Text style={styles.sectionTitle}>Matching Travelers</Text>
+          <View style={styles.foundPill}>
+            <Text style={styles.foundPillText}>{matches.length} found</Text>
+          </View>
         </View>
 
         {/* ---------------------------------------------------------------- */}
@@ -260,7 +356,11 @@ export default function RequestDetailScreen() {
           {matches.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={styles.emptyIconWrap}>
-                <MaterialCommunityIcons name="account-search" size={36} color={colors.textSecondary} />
+                <MaterialCommunityIcons
+                  name="account-search"
+                  size={36}
+                  color={colors.textSecondary}
+                />
               </View>
               <Text style={styles.emptyTitle}>No matches yet</Text>
               <Text style={styles.emptySubtitle}>
@@ -278,7 +378,34 @@ export default function RequestDetailScreen() {
       </ScrollView>
 
       {/* ------------------------------------------------------------------ */}
-      {/* Unlock Contact Modal                                                */}
+      {/* Bottom action bar                                                   */}
+      {/* ------------------------------------------------------------------ */}
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + spacing.sm }]}>
+        <TouchableOpacity
+          style={styles.editRequestBtn}
+          onPress={() => Alert.alert('Edit Request', 'Coming soon')}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.editRequestText}>Edit Request</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.shareRequestBtn}
+          onPress={() => Alert.alert('Share Request', 'Coming soon')}
+          activeOpacity={0.85}
+        >
+          <MaterialCommunityIcons
+            name="share-variant"
+            size={16}
+            color={colors.white}
+            style={styles.shareIcon}
+          />
+          <Text style={styles.shareRequestText}>Share Request</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Unlock Contact Modal — white bottom-sheet style                     */}
       {/* ------------------------------------------------------------------ */}
       <Portal>
         <Modal
@@ -365,7 +492,12 @@ export default function RequestDetailScreen() {
                 <Text style={styles.unlockButtonText}>Unlocking…</Text>
               ) : (
                 <>
-                  <MaterialCommunityIcons name="lock-open" size={15} color={colors.white} style={styles.unlockIcon} />
+                  <MaterialCommunityIcons
+                    name="lock-open"
+                    size={15}
+                    color={colors.white}
+                    style={styles.unlockIcon}
+                  />
                   <Text style={styles.unlockButtonText}>Unlock (1 credit)</Text>
                 </>
               )}
@@ -386,24 +518,58 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+
+  // ---- Sticky header ----
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  headerBtn: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    letterSpacing: -0.1,
+  },
+
+  // ---- ScrollView ----
   scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl,
+  },
 
-  // ---- Hero card ----
-  heroCard: {
+  // ---- Request info card ----
+  requestCard: {
     backgroundColor: colors.surface,
     marginHorizontal: spacing.md,
-    marginTop: spacing.md,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
     // Subtle shadow
     shadowColor: colors.black,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
   },
+
+  // Route row
   routeRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -415,36 +581,145 @@ const styles = StyleSheet.create({
   cityBlockRight: {
     alignItems: 'flex-end',
   },
-  cityIconWrap: {
+  cityLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
     marginBottom: 2,
   },
-  cityIconRight: {
-    alignItems: 'flex-end',
-  },
   cityName: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: '700',
     color: colors.textPrimary,
-    letterSpacing: -0.3,
+    letterSpacing: -0.5,
   },
-  countryName: {
-    fontSize: 12,
+  citySubtitle: {
+    fontSize: 13,
     color: colors.textSecondary,
     marginTop: 2,
   },
   textRight: {
     textAlign: 'right',
   },
-  arrowWrap: {
+  routeIconWrap: {
     paddingHorizontal: spacing.sm,
+    alignItems: 'center',
   },
+  airplaneIcon: {
+    transform: [{ rotate: '0deg' }],
+  },
+
+  // Card divider
+  cardDivider: {
+    height: 1,
+    backgroundColor: colors.divider,
+    marginVertical: spacing.md,
+  },
+
+  // 2-column meta row
   metaRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
+    alignItems: 'flex-start',
+  },
+  metaBox: {
+    flex: 1,
+  },
+  metaBoxRight: {
+    alignItems: 'flex-end',
+  },
+  metaLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  metaValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+
+  // Reward row (orange-50 bg with orange border)
+  rewardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.primaryLight,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: '#ffd5c4',
+    padding: spacing.md,
     marginBottom: spacing.md,
   },
-  metaChip: {
+  rewardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  rewardIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rewardDollar: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.white,
+  },
+  rewardTextCol: {
+    gap: 2,
+  },
+  rewardLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  rewardAmount: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  rewardTypePill: {
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    backgroundColor: colors.surface,
+  },
+  rewardTypeText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.textSecondary,
+  },
+
+  // Description
+  descriptionText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 22,
+    marginBottom: spacing.md,
+  },
+
+  // Chip row (status + deadline)
+  chipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  statusChip: {
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+  },
+  statusChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  deadlineChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -453,41 +728,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
   },
-  metaChipText: {
+  deadlineText: {
     fontSize: 12,
     fontWeight: '500',
     color: colors.textSecondary,
   },
-  descriptionRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.xs,
-    backgroundColor: colors.background,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-  },
-  descriptionText: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
 
   // ---- Section header ----
   sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
     paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     color: colors.textPrimary,
   },
-  sectionSubtitle: {
+  foundPill: {
+    backgroundColor: colors.divider,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+  },
+  foundPillText: {
     fontSize: 12,
+    fontWeight: '500',
     color: colors.textSecondary,
-    marginTop: 2,
   },
 
   // ---- Matches list ----
@@ -496,90 +766,129 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
 
-  // ---- Match card ----
+  // ---- Match card (Stitch layout) ----
   matchCard: {
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.md,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
     marginBottom: spacing.sm,
+    padding: spacing.md,
+    // Shadow
     shadowColor: colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
   },
-  travelerRow: {
+  matchCardInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    gap: spacing.sm,
   },
-  avatar: {
-    backgroundColor: colors.primary,
-  },
-  travelerInfo: {
-    flex: 1,
-    marginLeft: spacing.sm,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginBottom: 3,
-  },
-  travelerName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  scoreRow: {
-    flexDirection: 'row',
+
+  // Avatar column
+  avatarCol: {
     alignItems: 'center',
     gap: 4,
   },
-  scoreText: {
-    fontSize: 12,
-    color: colors.textSecondary,
+  avatarWrap: {
+    position: 'relative',
+    width: 56,
+    height: 56,
   },
-  matchDivider: {
-    height: 1,
-    backgroundColor: colors.divider,
-    marginBottom: spacing.sm,
+  avatarImg: {
+    backgroundColor: colors.primary,
   },
-  flightRow: {
+  onlineDot: {
+    position: 'absolute',
+    bottom: 1,
+    right: 1,
+    width: 12,
+    height: 12,
+    borderRadius: radius.full,
+    backgroundColor: colors.success,
+    borderWidth: 2,
+    borderColor: colors.surface,
+  },
+  ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.md,
+    gap: 2,
   },
-  flightIconWrap: {
-    width: 24,
-    height: 24,
-    borderRadius: radius.full,
-    backgroundColor: colors.primaryLight,
+  ratingText: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  ratingTrips: {
+    fontSize: 10,
+    color: colors.textSecondary,
+    fontWeight: '400',
+  },
+
+  // Middle info column
+  matchInfo: {
+    flex: 1,
+    gap: 3,
+  },
+  matchNameRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
   },
-  flightText: {
+  matchName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  highTrustPill: {
+    backgroundColor: colors.successLight,
+    borderRadius: radius.full,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  highTrustText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.success,
+  },
+  matchFlying: {
     fontSize: 13,
     color: colors.textSecondary,
   },
-  acceptButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+  matchLuggage: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+
+  // Right action column
+  matchAction: {
+    alignItems: 'flex-end',
+  },
+  acceptBtn: {
     backgroundColor: colors.primary,
     borderRadius: radius.md,
-    paddingVertical: 10,
-    paddingHorizontal: spacing.md,
-    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
   },
-  acceptIcon: {
-    // no extra style needed, gap handles it
-  },
-  acceptButtonText: {
-    fontSize: 14,
+  acceptBtnText: {
+    fontSize: 13,
     fontWeight: '600',
     color: colors.white,
+  },
+  viewProfileBtn: {
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+  },
+  viewProfileBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textSecondary,
   },
 
   // ---- Empty state ----
@@ -610,9 +919,53 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  // Bottom spacing
+  // Bottom spacing inside scroll
   bottomSpacing: {
     height: spacing.xl,
+  },
+
+  // ---- Bottom action bar ----
+  bottomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+  },
+  editRequestBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    paddingVertical: 13,
+  },
+  editRequestText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  shareRequestBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: radius.lg,
+    paddingVertical: 13,
+    gap: 6,
+  },
+  shareIcon: {
+    // gap handles spacing
+  },
+  shareRequestText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.white,
   },
 
   // ---- Unlock Contact Modal ----
@@ -736,7 +1089,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   unlockIcon: {
-    // no extra style needed, gap handles it
+    // gap handles spacing
   },
   unlockButtonText: {
     fontSize: 14,

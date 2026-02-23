@@ -3,224 +3,264 @@
  * Design: Stitch "User Account Profile" screen
  * projects/7580322135798196968/screens/316b74388bb042aa997649d5c2423ea2
  */
-import { View, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
-import { Text, Avatar, Divider } from 'react-native-paper';
+import React from 'react';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
+import { Text } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/stores/authStore';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { colors, spacing, radius } from '@/lib/theme';
-
-// Stat icon tint colors — sourced from colors palette (theme.ts)
-const STAT_COLORS = {
-  trustScore: { icon: colors.statTrustIcon, bg: colors.statTrustBg },
-  trips:      { icon: colors.statTripsIcon, bg: colors.statTripsBg },
-  deliveries: { icon: colors.statDelivIcon, bg: colors.statDelivBg },
-  rating:     { icon: colors.statRatingIcon, bg: colors.statRatingBg },
-};
-
-// Menu item icon tint: slate — sourced from colors palette (theme.ts)
-const MENU_ICON_BG    = colors.menuIconBg;
-const MENU_ICON_COLOR = colors.menuIconColor;
-
-export default function ProfileScreen() {
-  const { user, signOut } = useAuthStore();
-  const router = useRouter();
-
-  const userName    = user?.user_metadata?.full_name || 'User';
-  const userEmail   = user?.email || '';
-  const avatarUrl   = user?.user_metadata?.avatar_url;
-  const userInitials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
-
-  const handleSignOut = async () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut();
-              router.replace('/(auth)/login');
-            } catch (error) {
-              console.error('Sign out error:', error);
-              Alert.alert('Error', 'Failed to sign out. Please try again.');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-
-      {/* ── Profile Header ── */}
-      <View style={styles.profileHeader}>
-        {/* Avatar with verified badge */}
-        <View style={styles.avatarWrapper}>
-          {avatarUrl ? (
-            <Avatar.Image size={96} source={{ uri: avatarUrl }} style={styles.avatarImage} />
-          ) : (
-            <Avatar.Text size={96} label={userInitials} style={styles.avatarImage} />
-          )}
-          {/* Online / verified indicator */}
-          <View style={styles.verifiedBadge}>
-            <MaterialCommunityIcons name="check" size={12} color={colors.white} />
-          </View>
-        </View>
-
-        <Text style={styles.profileName}>{userName}</Text>
-        <Text style={styles.profileEmail}>{userEmail}</Text>
-
-        {/* Verified pill */}
-        <View style={styles.verifiedPill}>
-          <MaterialCommunityIcons name="check-decagram" size={14} color={colors.primary} />
-          <Text style={styles.verifiedPillText}>Verified Traveler</Text>
-        </View>
-      </View>
-
-      {/* ── Performance Stats ── */}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Performance Stats</Text>
-
-        <View style={styles.statsGrid}>
-          {/* Trust Score */}
-          <View style={styles.statCard}>
-            <View style={[styles.statIconBox, { backgroundColor: STAT_COLORS.trustScore.bg }]}>
-              <MaterialCommunityIcons name="shield-check" size={22} color={STAT_COLORS.trustScore.icon} />
-            </View>
-            <Text style={styles.statValue}>0</Text>
-            <Text style={styles.statLabel}>Trust Score</Text>
-          </View>
-
-          {/* Trips Posted */}
-          <View style={styles.statCard}>
-            <View style={[styles.statIconBox, { backgroundColor: STAT_COLORS.trips.bg }]}>
-              <MaterialCommunityIcons name="airplane-takeoff" size={22} color={STAT_COLORS.trips.icon} />
-            </View>
-            <Text style={styles.statValue}>0</Text>
-            <Text style={styles.statLabel}>Trips Posted</Text>
-          </View>
-
-          {/* Deliveries */}
-          <View style={styles.statCard}>
-            <View style={[styles.statIconBox, { backgroundColor: STAT_COLORS.deliveries.bg }]}>
-              <MaterialCommunityIcons name="truck-delivery" size={22} color={STAT_COLORS.deliveries.icon} />
-            </View>
-            <Text style={styles.statValue}>0</Text>
-            <Text style={styles.statLabel}>Deliveries</Text>
-          </View>
-
-          {/* Rating */}
-          <View style={styles.statCard}>
-            <View style={[styles.statIconBox, { backgroundColor: STAT_COLORS.rating.bg }]}>
-              <MaterialCommunityIcons name="star" size={22} color={STAT_COLORS.rating.icon} />
-            </View>
-            <Text style={styles.statValue}>0.0</Text>
-            <Text style={styles.statLabel}>Rating</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* ── Account Settings ── */}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Account Settings</Text>
-
-        <View style={styles.menuCard}>
-          <MenuItem
-            icon="account-outline"
-            label="Edit Personal Details"
-            onPress={() => Alert.alert('Coming Soon', 'Profile editing will be available in Milestone 5')}
-          />
-          <Divider style={styles.divider} />
-          <MenuItem
-            icon="card-account-details-outline"
-            label="Identity Verification"
-            subtitle="Not Verified"
-            onPress={() => Alert.alert('Coming Soon', 'Identity verification will be available soon')}
-          />
-          <Divider style={styles.divider} />
-          <MenuItem
-            icon="credit-card-outline"
-            label="Payment & Payouts"
-            onPress={() => Alert.alert('Coming Soon', 'Payment settings will be available soon')}
-          />
-          <Divider style={styles.divider} />
-          <MenuItem
-            icon="bell-outline"
-            label="Notifications"
-            onPress={() => Alert.alert('Coming Soon', 'Notification settings will be available soon')}
-          />
-        </View>
-      </View>
-
-      {/* ── App Info ── */}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>App Info</Text>
-
-        <View style={styles.menuCard}>
-          <MenuItem
-            icon="help-circle-outline"
-            label="Help & Support"
-            trailingIcon="open-in-new"
-            onPress={() => Alert.alert('Help & Support', 'Support features will be available soon')}
-          />
-          <Divider style={styles.divider} />
-          <MenuItem
-            icon="file-document-outline"
-            label="Terms & Privacy Policy"
-            onPress={() => Alert.alert('Terms & Privacy', 'Legal documents will be available soon')}
-          />
-        </View>
-
-        {/* Sign Out */}
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.75}>
-          <MaterialCommunityIcons name="logout" size={20} color={colors.error} />
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
-
-        {/* Version */}
-        <Text style={styles.versionText}>Version 1.0.0</Text>
-      </View>
-
-    </ScrollView>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // MenuItem sub-component
 // ---------------------------------------------------------------------------
 interface MenuItemProps {
   icon: string;
+  iconColor: string;
+  iconBg: string;
   label: string;
   subtitle?: string;
-  trailingIcon?: string;
+  subtitleColor?: string;
   onPress: () => void;
+  showDivider?: boolean;
 }
 
-function MenuItem({ icon, label, subtitle, trailingIcon = 'chevron-right', onPress }: MenuItemProps) {
+function MenuItem({
+  icon,
+  iconColor,
+  iconBg,
+  label,
+  subtitle,
+  subtitleColor,
+  onPress,
+  showDivider = false,
+}: MenuItemProps) {
   return (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
-      {/* Leading icon */}
-      <View style={styles.menuIconBox}>
-        <MaterialCommunityIcons name={icon as any} size={20} color={MENU_ICON_COLOR} />
+    <>
+      <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
+        {/* Leading icon circle */}
+        <View style={[styles.menuIconCircle, { backgroundColor: iconBg }]}>
+          <MaterialCommunityIcons name={icon as any} size={20} color={iconColor} />
+        </View>
+
+        {/* Label + optional subtitle */}
+        <View style={styles.menuLabelGroup}>
+          <Text style={styles.menuLabel}>{label}</Text>
+          {subtitle ? (
+            <Text style={[styles.menuSubtitle, subtitleColor ? { color: subtitleColor } : null]}>
+              {subtitle}
+            </Text>
+          ) : null}
+        </View>
+
+        {/* Trailing chevron */}
+        <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textDisabled} />
+      </TouchableOpacity>
+
+      {showDivider && <View style={styles.menuDivider} />}
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ProfileScreen
+// ---------------------------------------------------------------------------
+export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
+  const { user, signOut } = useAuthStore();
+  const router = useRouter();
+
+  const [avatarError, setAvatarError] = React.useState(false);
+
+  const userName = user?.user_metadata?.full_name || 'User';
+  const userEmail = user?.email || '';
+  const avatarUrl = user?.user_metadata?.avatar_url;
+  const userInitials = userName
+    .split(' ')
+    .map((n: string) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+  const handleSignOut = async () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOut();
+            router.replace('/(auth)/login');
+          } catch (error) {
+            console.error('Sign out error:', error);
+            Alert.alert('Error', 'Failed to sign out. Please try again.');
+          }
+        },
+      },
+    ]);
+  };
+
+  const showAvatar = !!avatarUrl && !avatarError;
+
+  return (
+    <View style={styles.screen}>
+      {/* ── Sticky Header ── */}
+      <View style={[styles.header, { paddingTop: insets.top }]}>
+        <Text style={styles.headerTitle}>Profile</Text>
+        <TouchableOpacity
+          onPress={() => Alert.alert('Coming Soon', 'Settings will be available soon')}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <MaterialCommunityIcons name="cog-outline" size={24} color="#6B7280" />
+        </TouchableOpacity>
       </View>
 
-      {/* Label (+ optional subtitle) */}
-      <View style={styles.menuLabelGroup}>
-        <Text style={styles.menuLabel}>{label}</Text>
-        {subtitle ? <Text style={styles.menuSubtitle}>{subtitle}</Text> : null}
-      </View>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Profile Section ── */}
+        <View style={styles.profileSection}>
+          {/* Avatar with verified badge */}
+          <View style={styles.avatarWrapper}>
+            {showAvatar ? (
+              <Image
+                source={{ uri: avatarUrl }}
+                style={styles.avatarImage}
+                onError={() => setAvatarError(true)}
+              />
+            ) : (
+              <View style={[styles.avatarImage, styles.avatarPlaceholder]}>
+                <MaterialCommunityIcons name="account" size={52} color="#9ca3af" />
+                {userInitials ? (
+                  <Text style={styles.avatarInitialsText}>{userInitials}</Text>
+                ) : null}
+              </View>
+            )}
 
-      {/* Trailing chevron */}
-      <MaterialCommunityIcons name={trailingIcon as any} size={20} color={colors.textDisabled} />
-    </TouchableOpacity>
+            {/* Green check badge */}
+            <View style={styles.verifiedBadge}>
+              <MaterialCommunityIcons name="check" size={13} color={colors.white} />
+            </View>
+          </View>
+
+          {/* Name */}
+          <Text style={styles.profileName}>{userName}</Text>
+
+          {/* Email */}
+          <Text style={styles.profileEmail}>{userEmail}</Text>
+
+          {/* Verified Traveler pill */}
+          <View style={styles.verifiedPill}>
+            <MaterialCommunityIcons name="shield-check" size={14} color="#15803d" />
+            <Text style={styles.verifiedPillText}>Verified Traveler</Text>
+          </View>
+        </View>
+
+        {/* ── Stats Card ── */}
+        <View style={styles.statsCard}>
+          {/* Trust Score */}
+          <View style={styles.statColumn}>
+            <Text style={[styles.statValue, { color: colors.primary }]}>0</Text>
+            <Text style={styles.statLabel}>Trust Score</Text>
+          </View>
+
+          <View style={styles.statDivider} />
+
+          {/* Trips */}
+          <View style={styles.statColumn}>
+            <Text style={styles.statValue}>0</Text>
+            <Text style={styles.statLabel}>Trips</Text>
+          </View>
+
+          <View style={styles.statDivider} />
+
+          {/* Delivered */}
+          <View style={styles.statColumn}>
+            <Text style={styles.statValue}>0kg</Text>
+            <Text style={styles.statLabel}>Delivered</Text>
+          </View>
+        </View>
+
+        {/* ── Menu Section 1 ── */}
+        <View style={styles.menuCard}>
+          <MenuItem
+            icon="account-outline"
+            iconColor="#2563eb"
+            iconBg="#dbeafe"
+            label="Edit Profile"
+            onPress={() =>
+              Alert.alert('Coming Soon', 'Profile editing will be available in Milestone 5')
+            }
+            showDivider
+          />
+          <MenuItem
+            icon="check-decagram"
+            iconColor="#9333ea"
+            iconBg="#f3e8ff"
+            label="Identity Verification"
+            subtitle="Completed"
+            subtitleColor={colors.success}
+            onPress={() =>
+              Alert.alert('Coming Soon', 'Identity verification will be available soon')
+            }
+            showDivider
+          />
+          <MenuItem
+            icon="credit-card-outline"
+            iconColor="#ea580c"
+            iconBg="#fff7ed"
+            label="Payment Methods"
+            onPress={() => Alert.alert('Coming Soon', 'Payment settings will be available soon')}
+          />
+        </View>
+
+        {/* ── Menu Section 2 ── */}
+        <View style={[styles.menuCard, styles.menuCardSpaced]}>
+          <MenuItem
+            icon="bell-outline"
+            iconColor="#4b5563"
+            iconBg="#f1f5f9"
+            label="Notifications"
+            onPress={() =>
+              Alert.alert('Coming Soon', 'Notification settings will be available soon')
+            }
+            showDivider
+          />
+          <MenuItem
+            icon="help-circle-outline"
+            iconColor="#4b5563"
+            iconBg="#f1f5f9"
+            label="Help & Support"
+            onPress={() => Alert.alert('Help & Support', 'Support features will be available soon')}
+          />
+        </View>
+
+        {/* ── Sign Out ── */}
+        <TouchableOpacity
+          style={styles.signOutButton}
+          onPress={handleSignOut}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons name="logout" size={20} color={colors.error} />
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
+
+        {/* ── Version ── */}
+        <Text style={styles.versionText}>Version 1.0.0</Text>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -228,28 +268,52 @@ function MenuItem({ icon, label, subtitle, trailingIcon = 'chevron-right', onPre
 // Styles
 // ---------------------------------------------------------------------------
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  contentContainer: {
-    paddingBottom: spacing.xxl,
+    backgroundColor: '#F9FAFB',
   },
 
-  // ── Profile Header ──────────────────────────────────────────────────────
-  profileHeader: {
+  // ── Header ────────────────────────────────────────────────────────────────
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.xl,
+    justifyContent: 'space-between',
+    backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+  },
+
+  // ── ScrollView ────────────────────────────────────────────────────────────
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: spacing.xl + spacing.md,
+  },
+
+  // ── Profile Section ───────────────────────────────────────────────────────
+  profileSection: {
+    alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    backgroundColor: colors.background,
+    paddingVertical: spacing.xl,
+    backgroundColor: colors.white,
   },
   avatarWrapper: {
     position: 'relative',
     marginBottom: spacing.md,
   },
   avatarImage: {
-    borderWidth: 3,
+    width: 96,
+    height: 96,
+    borderRadius: radius.full,
+    borderWidth: 4,
     borderColor: colors.white,
     // Shadow
     shadowColor: colors.black,
@@ -258,10 +322,22 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 4,
   },
+  avatarPlaceholder: {
+    backgroundColor: colors.divider,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarInitialsText: {
+    position: 'absolute',
+    fontSize: 32,
+    fontWeight: '700',
+    color: colors.textSecondary,
+  },
   verifiedBadge: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
+    bottom: 0,
+    right: 0,
     width: 24,
     height: 24,
     borderRadius: radius.full,
@@ -272,113 +348,100 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   profileName: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
+    color: '#111827',
     textAlign: 'center',
+    marginBottom: spacing.xs,
   },
   profileEmail: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm + 4,
+    fontSize: 14,
+    color: '#6B7280',
     textAlign: 'center',
+    marginBottom: spacing.md - 4,
   },
   verifiedPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: spacing.sm + 4,
-    paddingVertical: spacing.xs,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: radius.full,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: '#dcfce7',
   },
   verifiedPillText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
-    color: colors.primary,
+    color: '#15803d',
   },
 
-  // ── Section ─────────────────────────────────────────────────────────────
-  section: {
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: spacing.sm,
-    marginLeft: spacing.xs,
-  },
-
-  // ── Stats Grid ───────────────────────────────────────────────────────────
-  statsGrid: {
+  // ── Stats Card ────────────────────────────────────────────────────────────
+  statsCard: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  statCard: {
-    width: '47.5%',
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.md,
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#e5e7eb',
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.xl + spacing.sm,
+    marginTop: spacing.lg,
+    paddingVertical: spacing.md,
     // Shadow
     shadowColor: colors.black,
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
-  statIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.md,
+  statColumn: {
+    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
   },
   statValue: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 2,
+    color: '#111827',
   },
   statLabel: {
     fontSize: 12,
-    fontWeight: '500',
-    color: colors.textSecondary,
+    color: '#6B7280',
+    marginTop: spacing.xs,
+  },
+  statDivider: {
+    width: 1,
+    height: 36,
+    backgroundColor: '#e5e7eb',
   },
 
-  // ── Menu Card ────────────────────────────────────────────────────────────
+  // ── Menu Card ─────────────────────────────────────────────────────────────
   menuCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    backgroundColor: colors.white,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#e5e7eb',
+    marginHorizontal: spacing.md,
     overflow: 'hidden',
     // Shadow
     shadowColor: colors.black,
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  menuCardSpaced: {
+    marginTop: 12,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 4,
+    paddingVertical: 14,
   },
-  menuIconBox: {
-    width: 36,
-    height: 36,
+  menuIconCircle: {
+    width: 40,
+    height: 40,
     borderRadius: radius.full,
-    backgroundColor: MENU_ICON_BG,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.sm + 4,
@@ -387,43 +450,41 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menuLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
-    color: colors.textPrimary,
+    color: '#111827',
   },
   menuSubtitle: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginTop: 1,
+    marginTop: 2,
   },
-  divider: {
+  menuDivider: {
+    height: 1,
     backgroundColor: colors.divider,
     marginHorizontal: spacing.md,
   },
 
-  // ── Sign Out ─────────────────────────────────────────────────────────────
+  // ── Sign Out ──────────────────────────────────────────────────────────────
   signOutButton: {
-    marginTop: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
+    marginTop: spacing.lg,
     paddingVertical: spacing.sm + 4,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.lg,
-    backgroundColor: colors.errorLight,
-    borderWidth: 1,
-    borderColor: colors.errorBorder,
   },
   signOutText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: colors.error,
   },
+
+  // ── Version ───────────────────────────────────────────────────────────────
   versionText: {
     textAlign: 'center',
     fontSize: 12,
     color: colors.textDisabled,
-    marginTop: spacing.lg,
+    marginTop: spacing.sm,
   },
 });

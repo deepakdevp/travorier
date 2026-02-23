@@ -4,9 +4,9 @@
  * Design based on Stitch screen:
  * projects/7580322135798196968/screens/d60fdf79a10b4eb39f118241d746ff67
  */
-import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Alert, TouchableOpacity, Image } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
-import { AntDesign } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, spacing, radius } from '@/lib/theme';
@@ -19,13 +19,11 @@ export default function LoginScreen() {
     try {
       setLoading(true);
       await signInWithGoogle();
-      // Navigation will be handled automatically by auth state change
+      // Navigation handled automatically by auth state change
     } catch (error: any) {
       setLoading(false);
 
-      // User-friendly error messages
       let errorMessage = 'Unable to sign in. Please try again.';
-
       if (error?.message?.includes('network')) {
         errorMessage = 'Network error. Please check your internet connection.';
       } else if (error?.message?.includes('cancelled') || error?.message?.includes('canceled')) {
@@ -34,89 +32,101 @@ export default function LoginScreen() {
         errorMessage = 'Please allow popups to continue with Google Sign-In.';
       }
 
-      Alert.alert('Sign In Failed', errorMessage, [
-        { text: 'OK', style: 'default' }
-      ]);
-
+      Alert.alert('Sign In Failed', errorMessage, [{ text: 'OK', style: 'default' }]);
       console.error('Google sign-in error:', error);
     }
   };
 
+  const handleEmailSignIn = () => {
+    Alert.alert('Coming Soon', 'Email sign-in will be available soon.');
+  };
+
+  const handleCreateAccount = () => {
+    Alert.alert('Coming Soon', 'Account creation will be available soon.');
+  };
+
   const handleTermsPress = () => {
-    // TODO: Link to terms page when available
     Alert.alert('Terms of Service', 'Terms of Service will be available soon.');
   };
 
   const handlePrivacyPress = () => {
-    // TODO: Link to privacy page when available
     Alert.alert('Privacy Policy', 'Privacy Policy will be available soon.');
   };
 
   return (
     <View style={styles.screen}>
-      {/* Hero / Logo section */}
-      <View style={styles.heroSection}>
-        {/* Icon badges row */}
-        <View style={styles.iconRow}>
-          <View style={styles.iconBadge}>
-            <Text style={styles.iconText}>📦</Text>
-          </View>
-          <View style={styles.iconBadge}>
-            <Text style={styles.iconText}>✈️</Text>
-          </View>
+      {/* Center content */}
+      <View style={styles.center}>
+        {/* App icon — orange rounded square with truck, rotated 3° */}
+        <View style={styles.logoWrap}>
+          <MaterialCommunityIcons name="truck-delivery" size={48} color="#ffffff" />
         </View>
 
         {/* Brand name */}
         <Text style={styles.brandName}>Travorier</Text>
 
         {/* Tagline */}
-        <Text style={styles.tagline}>Connect Travelers with Package Senders</Text>
-      </View>
+        <Text style={styles.tagline}>
+          Connect Travelers with{'\n'}Package Senders
+        </Text>
 
-      {/* Auth card */}
-      <View style={styles.authCard}>
-        <Text style={styles.welcomeTitle}>Welcome back</Text>
-        <Text style={styles.welcomeSubtitle}>Sign in to continue</Text>
+        {/* Buttons */}
+        <View style={styles.buttonGroup}>
+          {/* Sign in with Google */}
+          <TouchableOpacity
+            style={styles.googleButton}
+            onPress={handleGoogleSignIn}
+            disabled={loading}
+            activeOpacity={0.85}
+          >
+            {loading ? (
+              <ActivityIndicator animating size="small" color={colors.textSecondary} style={styles.btnIcon} />
+            ) : (
+              <Image
+                source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBeNITP2kf_zYcZQZvxI2OaT8bQlvabPTGzB-8C1DOjpUVOZwe1jLdOStQpQMayFS6QxzSHRQc6PbSdNH8zYe4Zrpi84Em7QZnDg10cqdT1QMPcsgkAEX94mgNeAYMarNsOXlR00WmRwihipeA1aPXKonRdU_GzjThI0l9fJ-o_3JZPldewyZ9LRuT2O9_5EH_yPyiesVYqUd53T87zR_ovToOM7jesgnEBTGzsqcPVKcbr0R2-1gDl6w8gs3OB0e4DRpWqtcaVIFg' }}
+                style={styles.googleLogo}
+              />
+            )}
+            <Text style={styles.googleButtonLabel}>
+              {loading ? 'Signing in...' : 'Sign in with Google'}
+            </Text>
+          </TouchableOpacity>
 
-        {/* Google sign-in button */}
-        <TouchableOpacity
-          style={[styles.googleButton, loading && styles.googleButtonDisabled]}
-          onPress={handleGoogleSignIn}
-          disabled={loading}
-          activeOpacity={0.8}
-        >
-          {loading ? (
-            <ActivityIndicator
-              animating={true}
-              color={colors.primary}
-              size="small"
-              style={styles.buttonSpinner}
-            />
-          ) : (
-            <AntDesign name="google" size={18} color={colors.primary} style={styles.googleIcon} />
-          )}
-          <Text style={styles.googleButtonLabel}>
-            {loading ? 'Signing in...' : 'Sign in with Google'}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Disclaimer + links */}
-        <View style={styles.disclaimerRow}>
-          <Text style={styles.disclaimerText}>By continuing, you agree to our </Text>
-          <Text style={styles.linkText} onPress={handleTermsPress}>
-            Terms of Service
-          </Text>
-          <Text style={styles.disclaimerText}> and </Text>
-          <Text style={styles.linkText} onPress={handlePrivacyPress}>
-            Privacy Policy
-          </Text>
+          {/* Continue with Email */}
+          <TouchableOpacity
+            style={styles.emailButton}
+            onPress={handleEmailSignIn}
+            activeOpacity={0.85}
+          >
+            <MaterialCommunityIcons name="email-outline" size={20} color="#ffffff" style={styles.btnIcon} />
+            <Text style={styles.emailButtonLabel}>Continue with Email</Text>
+          </TouchableOpacity>
         </View>
+
+        {/* OR divider */}
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>OR</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        {/* Create Account */}
+        <Text style={styles.createAccountRow}>
+          <Text style={styles.createAccountText}>New to Travorier? </Text>
+          <Text style={styles.createAccountLink} onPress={handleCreateAccount}>
+            Create Account
+          </Text>
+        </Text>
       </View>
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Crowdsourced Logistics Platform</Text>
-        <Text style={styles.versionText}>v1.0.4</Text>
+        <Text style={styles.termsText}>
+          By continuing, you agree to our{' '}
+          <Text style={styles.termsLink} onPress={handleTermsPress}>Terms of Service</Text>
+          {' '}and acknowledge that you have read our{' '}
+          <Text style={styles.termsLink} onPress={handlePrivacyPress}>Privacy Policy</Text>.
+        </Text>
       </View>
     </View>
   );
@@ -125,138 +135,156 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#ffffff',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: 96,
+    paddingHorizontal: spacing.xl,
     paddingBottom: spacing.xl,
   },
 
-  // Hero section
-  heroSection: {
+  center: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: spacing.xl,
   },
-  iconRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  iconBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.lg,
-    backgroundColor: colors.primaryLight,
+
+  // Logo — orange square, rotated 3°
+  logoWrap: {
+    width: 96,
+    height: 96,
+    backgroundColor: colors.primary,
+    borderRadius: radius.xl,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: spacing.lg,
+    transform: [{ rotate: '3deg' }],
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
-  iconText: {
-    fontSize: 30,
-  },
+
   brandName: {
-    fontSize: 36,
+    fontSize: 30,
     fontWeight: '700',
-    color: colors.primary,
+    color: '#111827',
     marginBottom: spacing.sm,
     letterSpacing: -0.5,
   },
+
   tagline: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '400',
-    color: colors.textSecondary,
+    color: '#6b7280',
     textAlign: 'center',
-    paddingHorizontal: spacing.md,
+    lineHeight: 24,
+    marginBottom: spacing.xxl,
   },
 
-  // Auth card
-  authCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    padding: spacing.xl,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  welcomeTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-    textAlign: 'center',
-  },
-  welcomeSubtitle: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: spacing.xl,
+  buttonGroup: {
+    width: '100%',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
   },
 
-  // Google button
+  // Google button — white bg, gray border
   googleButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: radius.full,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: radius.lg,
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    marginBottom: spacing.xl,
-    shadowColor: colors.black,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  googleButtonDisabled: {
-    opacity: 0.6,
-  },
-  googleIcon: {
+  googleLogo: {
+    width: 24,
+    height: 24,
     marginRight: spacing.sm,
   },
   googleButtonLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#111827',
   },
-  buttonSpinner: {
+
+  // Email button — solid orange
+  emailButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.md,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  emailButtonLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#ffffff',
+  },
+
+  btnIcon: {
     marginRight: spacing.sm,
   },
 
-  // Disclaimer
-  disclaimerRow: {
+  // OR divider
+  dividerRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
     alignItems: 'center',
+    width: '100%',
+    marginBottom: spacing.lg,
   },
-  disclaimerText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    lineHeight: 18,
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e5e7eb',
   },
-  linkText: {
+  dividerText: {
     fontSize: 12,
-    color: colors.primary,
+    color: '#9ca3af',
+    paddingHorizontal: spacing.md,
+    letterSpacing: 1,
     fontWeight: '500',
-    lineHeight: 18,
   },
 
-  // Footer
+  // Create Account
+  createAccountRow: {
+    textAlign: 'center',
+  },
+  createAccountText: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  createAccountLink: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+
+  // Footer terms
   footer: {
     alignItems: 'center',
-    gap: spacing.xs,
   },
-  footerText: {
+  termsText: {
     fontSize: 12,
-    color: colors.textDisabled,
+    color: '#9ca3af',
+    textAlign: 'center',
+    lineHeight: 18,
   },
-  versionText: {
-    fontSize: 11,
-    color: colors.textDisabled,
+  termsLink: {
+    fontSize: 12,
+    color: '#6b7280',
+    textDecorationLine: 'underline',
   },
 });

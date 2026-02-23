@@ -1,6 +1,9 @@
 /**
  * Chat Screen - Real-time chat with matched traveler via Supabase Realtime
+ * Design matches Stitch "Traveler Chat Session" screen:
+ * projects/7580322135798196968/screens/c6827f63a8064f56bab45c25f7a0a7d4
  */
+import React from 'react';
 import {
   View,
   StyleSheet,
@@ -8,15 +11,22 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  TouchableOpacity,
+  TextInput as RNTextInput,
+  Image,
 } from 'react-native';
-import { Text, TextInput, Surface, Avatar } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/services/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { useRequestsStore } from '@/stores/requestsStore';
 import { colors, spacing, radius } from '@/lib/theme';
+
+// Blue for chat bubbles — per Stitch chat design (not global orange primary)
+const BUBBLE_BLUE = '#3B82F6';
 
 interface Message {
   id: string;
@@ -28,6 +38,7 @@ interface Message {
 
 export default function ChatScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const { selectedMatch } = useRequestsStore();
 
@@ -140,36 +151,6 @@ export default function ChatScreen() {
     }
   };
 
-  const renderMessage = ({ item }: { item: Message }) => {
-    const isMe = item.sender_id === currentUserId;
-    return (
-      <View
-        style={[
-          styles.messageBubbleContainer,
-          isMe ? styles.myMessageContainer : styles.theirMessageContainer,
-        ]}
-      >
-        <View style={[styles.messageBubble, isMe ? styles.myBubble : styles.theirBubble]}>
-          <Text
-            variant="bodyMedium"
-            style={isMe ? styles.myMessageText : styles.theirMessageText}
-          >
-            {item.content}
-          </Text>
-          <Text
-            variant="bodySmall"
-            style={[styles.timestamp, isMe ? styles.myTimestamp : styles.theirTimestamp]}
-          >
-            {new Date(item.created_at).toLocaleTimeString('en-IN', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </Text>
-        </View>
-      </View>
-    );
-  };
-
   const travelerInitials = traveler.full_name
     .split(' ')
     .map((n: string) => n[0])
@@ -177,70 +158,123 @@ export default function ChatScreen() {
     .toUpperCase()
     .slice(0, 2);
 
-  return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={90}
-    >
-      {/* Chat Header */}
-      <Surface style={styles.header} elevation={2}>
-        <View style={styles.headerContent}>
-          {traveler.avatar_url ? (
-            <Avatar.Image size={44} source={{ uri: traveler.avatar_url }} />
-          ) : (
-            <Avatar.Text size={44} label={travelerInitials} />
-          )}
-          <View style={styles.headerInfo}>
-            <Text variant="titleSmall" style={styles.travelerName}>
-              {traveler.full_name}
-            </Text>
-            <Text variant="bodySmall" style={styles.routeText}>
-              {selectedMatch.trip.origin_city} → {selectedMatch.trip.destination_city}
-            </Text>
+  const originCode = selectedMatch.trip.origin_city.slice(0, 3).toUpperCase();
+  const destCode = selectedMatch.trip.destination_city.slice(0, 3).toUpperCase();
+
+  const renderMessage = ({ item }: { item: Message }) => {
+    const isMe = item.sender_id === currentUserId;
+    const timeStr = new Date(item.created_at).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+
+    if (isMe) {
+      return (
+        <View style={styles.myMessageWrap}>
+          <View style={styles.myBubble}>
+            <Text style={styles.myBubbleText}>{item.content}</Text>
           </View>
-          {traveler.verified && (
-            <MaterialCommunityIcons name="check-decagram" size={22} color={colors.primary} />
+          <Text style={styles.myTimestamp}>{timeStr} · Read</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.theirMessageWrap}>
+        {/* Small avatar shown for received messages */}
+        <View style={styles.theirAvatarSmall}>
+          {traveler.avatar_url ? (
+            <Image source={{ uri: traveler.avatar_url }} style={styles.theirAvatarImg} />
+          ) : (
+            <View style={styles.theirAvatarFallback}>
+              <Text style={styles.theirAvatarInitials}>{travelerInitials[0]}</Text>
+            </View>
           )}
         </View>
-      </Surface>
+        <View style={styles.theirBubbleGroup}>
+          <View style={styles.theirBubble}>
+            <Text style={styles.theirBubbleText}>{item.content}</Text>
+          </View>
+          <Text style={styles.theirTimestamp}>{timeStr}</Text>
+        </View>
+      </View>
+    );
+  };
 
-      {/* Chat Lock / Info Banner */}
+  return (
+    <KeyboardAvoidingView
+      style={[styles.container, { paddingTop: insets.top }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        {/* Left: back + avatar + name/route */}
+        <View style={styles.headerLeft}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#374151" />
+          </TouchableOpacity>
+
+          <View style={styles.headerAvatarWrap}>
+            {traveler.avatar_url ? (
+              <Image source={{ uri: traveler.avatar_url }} style={styles.headerAvatar} />
+            ) : (
+              <View style={styles.headerAvatarFallback}>
+                <Text style={styles.headerAvatarInitials}>{travelerInitials}</Text>
+              </View>
+            )}
+            {/* Green online dot */}
+            <View style={styles.onlineDot} />
+          </View>
+
+          <View style={styles.headerInfo}>
+            <Text style={styles.travelerName}>{traveler.full_name}</Text>
+            <View style={styles.routeRow}>
+              <MaterialCommunityIcons name="airplane-takeoff" size={12} color="#9ca3af" />
+              <Text style={styles.routeText}> {originCode} → {destCode}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Right: phone + dots */}
+        <View style={styles.headerRight}>
+          <TouchableOpacity style={styles.headerIconBtn} activeOpacity={0.7}>
+            <MaterialCommunityIcons name="phone-outline" size={22} color="#6b7280" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.headerIconBtn} activeOpacity={0.7}>
+            <MaterialCommunityIcons name="dots-vertical" size={22} color="#6b7280" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Info / Lock banner */}
       {isChatLocked ? (
         <View style={styles.lockBanner}>
-          <MaterialCommunityIcons name="lock" size={16} color={colors.white} />
-          <Text variant="bodySmall" style={styles.lockText}>
-            Chat locked 24 hours after flight
-          </Text>
+          <MaterialCommunityIcons name="lock" size={14} color="#ffffff" />
+          <Text style={styles.lockText}>Chat locked 24 hours after flight</Text>
         </View>
       ) : (
         <View style={styles.infoBanner}>
-          <MaterialCommunityIcons name="information" size={14} color={colors.textSecondary} />
-          <Text variant="bodySmall" style={styles.infoText}>
-            Chat available until 24h after flight on{' '}
-            {flightDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+          <MaterialCommunityIcons name="information" size={14} color="#6366f1" />
+          <Text style={styles.infoText}>
+            {traveler.full_name.split(' ')[0]} is traveling{' '}
+            {flightDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()}.
+            Chat response times might be slower during the flight.
           </Text>
         </View>
       )}
 
       {/* Messages */}
       {loadingHistory ? (
-        <View style={styles.loadingContainer}>
-          <Text variant="bodyMedium" style={styles.loadingText}>
-            Loading messages...
-          </Text>
+        <View style={styles.centerState}>
+          <Text style={styles.centerStateText}>Loading messages...</Text>
         </View>
       ) : loadError ? (
-        <View style={styles.loadingContainer}>
+        <View style={styles.centerState}>
           <MaterialCommunityIcons name="alert-circle-outline" size={48} color={colors.textDisabled} />
-          <Text variant="bodyMedium" style={styles.loadingText}>
-            Failed to load messages
-          </Text>
-          <Text
-            variant="bodySmall"
-            style={[styles.loadingText, { color: colors.primary, marginTop: spacing.sm }]}
-            onPress={loadMessageHistory}
-          >
+          <Text style={styles.centerStateText}>Failed to load messages</Text>
+          <Text style={[styles.centerStateText, { color: BUBBLE_BLUE, marginTop: spacing.sm }]} onPress={loadMessageHistory}>
             Tap to retry
           </Text>
         </View>
@@ -255,36 +289,47 @@ export default function ChatScreen() {
           ListEmptyComponent={
             <View style={styles.emptyChat}>
               <MaterialCommunityIcons name="chat-outline" size={48} color={colors.textDisabled} />
-              <Text variant="bodyMedium" style={styles.emptyChatText}>
-                Say hi to start the conversation!
-              </Text>
+              <Text style={styles.emptyChatText}>Say hi to start the conversation!</Text>
             </View>
           }
         />
       )}
 
-      {/* Input Bar */}
-      <Surface style={styles.inputBar} elevation={4}>
-        <TextInput
-          value={inputText}
-          onChangeText={setInputText}
-          placeholder={isChatLocked ? 'Chat is locked' : 'Type a message...'}
-          mode="outlined"
-          style={styles.textInput}
-          dense
-          disabled={isChatLocked}
-          onSubmitEditing={sendMessage}
-          returnKeyType="send"
-          right={
-            <TextInput.Icon
-              icon="send"
-              disabled={!inputText.trim() || sending || isChatLocked || !user}
-              onPress={sendMessage}
-              color={inputText.trim() && !isChatLocked ? colors.primary : colors.textDisabled}
-            />
-          }
-        />
-      </Surface>
+      {/* Input bar */}
+      <View style={[styles.inputBar, { paddingBottom: insets.bottom + spacing.sm }]}>
+        <TouchableOpacity style={styles.inputAddBtn} activeOpacity={0.7}>
+          <MaterialCommunityIcons name="plus" size={22} color="#6b7280" />
+        </TouchableOpacity>
+
+        <View style={styles.inputWrap}>
+          <RNTextInput
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder={isChatLocked ? 'Chat is locked' : 'Type a message...'}
+            placeholderTextColor="#9ca3af"
+            style={styles.textInput}
+            editable={!isChatLocked}
+            onSubmitEditing={sendMessage}
+            returnKeyType="send"
+            multiline
+          />
+          <TouchableOpacity style={styles.emojiBtn} activeOpacity={0.7}>
+            <MaterialCommunityIcons name="emoticon-outline" size={20} color="#9ca3af" />
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          style={[
+            styles.sendBtn,
+            (!inputText.trim() || sending || isChatLocked) && styles.sendBtnDisabled,
+          ]}
+          onPress={sendMessage}
+          disabled={!inputText.trim() || sending || isChatLocked || !user}
+          activeOpacity={0.85}
+        >
+          <MaterialCommunityIcons name="send" size={20} color="#ffffff" />
+        </TouchableOpacity>
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -292,121 +337,291 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F3F4F6',
   },
+
+  // ── Header ────────────────────────────────────────────────────────────────
   header: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 4,
-  },
-  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm + 4,
+    justifyContent: 'space-between',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.sm,
+  },
+  backBtn: {
+    padding: spacing.xs,
+    marginLeft: -spacing.xs,
+  },
+  headerAvatarWrap: {
+    position: 'relative',
+  },
+  headerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  headerAvatarFallback: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: BUBBLE_BLUE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerAvatarInitials: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  onlineDot: {
+    position: 'absolute',
+    bottom: 1,
+    right: 1,
+    width: 12,
+    height: 12,
+    borderRadius: radius.full,
+    backgroundColor: '#22c55e',
+    borderWidth: 2,
+    borderColor: '#ffffff',
   },
   headerInfo: {
     flex: 1,
   },
   travelerName: {
-    fontWeight: 'bold',
-    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#111827',
+    lineHeight: 18,
+  },
+  routeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 1,
   },
   routeText: {
-    color: colors.textSecondary,
-    marginTop: 2,
+    fontSize: 12,
+    color: '#6b7280',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  headerIconBtn: {
+    padding: spacing.sm,
+    borderRadius: radius.full,
+  },
+
+  // ── Banners ───────────────────────────────────────────────────────────────
+  infoBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    backgroundColor: '#eef2ff',        // indigo-50
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e7ff',      // indigo-100
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#3730a3',                  // indigo-800
+    lineHeight: 16,
   },
   lockBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm - 2,
-    backgroundColor: colors.textSecondary,
+    backgroundColor: '#6b7280',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
   lockText: {
-    color: colors.white,
+    fontSize: 12,
+    color: '#ffffff',
+    fontWeight: '500',
   },
-  infoBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm - 2,
-    backgroundColor: colors.warningLight,
+
+  // ── Messages ─────────────────────────────────────────────────────────────
+  messagesList: {
+    padding: spacing.md,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+
+  // Sent message (me)
+  myMessageWrap: {
+    alignItems: 'flex-end',
+    marginBottom: spacing.sm,
+  },
+  myBubble: {
+    backgroundColor: BUBBLE_BLUE,
+    borderRadius: radius.xl,
+    borderBottomRightRadius: radius.xs,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.sm + 2,
+    maxWidth: '75%',
   },
-  infoText: {
-    color: colors.textSecondary,
-    flex: 1,
+  myBubbleText: {
+    fontSize: 14,
+    color: '#ffffff',
+    lineHeight: 20,
   },
-  loadingContainer: {
+  myTimestamp: {
+    fontSize: 10,
+    color: '#9ca3af',
+    marginTop: 3,
+  },
+
+  // Received message
+  theirMessageWrap: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  theirAvatarSmall: {
+    flexShrink: 0,
+    marginBottom: spacing.sm,
+  },
+  theirAvatarImg: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  theirAvatarFallback: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    backgroundColor: '#e5e7eb',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  theirAvatarInitials: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#6b7280',
+  },
+  theirBubbleGroup: {
+    maxWidth: '75%',
+    gap: 3,
+  },
+  theirBubble: {
+    backgroundColor: '#ffffff',
+    borderRadius: radius.xl,
+    borderBottomLeftRadius: radius.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  theirBubbleText: {
+    fontSize: 14,
+    color: '#1f2937',
+    lineHeight: 20,
+  },
+  theirTimestamp: {
+    fontSize: 10,
+    color: '#9ca3af',
+  },
+
+  // Empty / loading states
+  centerState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loadingText: {
-    color: colors.textDisabled,
-  },
-  messagesList: {
-    padding: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  messageBubbleContainer: {
-    marginBottom: spacing.sm,
-  },
-  myMessageContainer: {
-    alignItems: 'flex-end',
-  },
-  theirMessageContainer: {
-    alignItems: 'flex-start',
-  },
-  messageBubble: {
-    maxWidth: '75%',
-    paddingHorizontal: spacing.sm + 6,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: radius.xl,
-  },
-  myBubble: {
-    backgroundColor: colors.primary,
-    borderBottomRightRadius: radius.sm,
-  },
-  theirBubble: {
-    backgroundColor: colors.surface,
-    borderBottomLeftRadius: radius.sm,
-  },
-  myMessageText: {
-    color: colors.white,
-  },
-  theirMessageText: {
-    color: colors.textPrimary,
-  },
-  timestamp: {
-    fontSize: 10,
-    marginTop: spacing.xs,
-  },
-  myTimestamp: {
-    color: 'rgba(255,255,255,0.7)',
-    textAlign: 'right',
-  },
-  theirTimestamp: {
-    color: colors.textDisabled,
+  centerStateText: {
+    fontSize: 14,
+    color: '#9ca3af',
+    marginTop: spacing.sm,
   },
   emptyChat: {
     alignItems: 'center',
     paddingVertical: 60,
   },
   emptyChatText: {
-    color: colors.textDisabled,
+    fontSize: 14,
+    color: '#9ca3af',
     marginTop: spacing.sm + 4,
   },
+
+  // ── Input bar ─────────────────────────────────────────────────────────────
   inputBar: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.sm + 4,
-    paddingVertical: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: '#e5e7eb',
+  },
+  inputAddBtn: {
+    padding: spacing.xs,
+  },
+  inputWrap: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f9fafb',
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    minHeight: 40,
   },
   textInput: {
-    backgroundColor: colors.surface,
     flex: 1,
+    fontSize: 14,
+    color: '#111827',
+    paddingVertical: spacing.xs,
+    maxHeight: 100,
+  },
+  emojiBtn: {
+    padding: spacing.xs,
+  },
+  sendBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: BUBBLE_BLUE,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: BUBBLE_BLUE,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  sendBtnDisabled: {
+    backgroundColor: '#d1d5db',
+    shadowOpacity: 0,
+    elevation: 0,
   },
 });

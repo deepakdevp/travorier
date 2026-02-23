@@ -12,7 +12,7 @@ export default function TabsLayout() {
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        headerShown: true,
+        headerShown: false,
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
@@ -48,7 +48,7 @@ export default function TabsLayout() {
           title: 'Requests',
           tabBarLabel: 'Requests',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="package-variant" size={size} color={color} />
+            <MaterialCommunityIcons name="truck-delivery" size={size} color={color} />
           ),
         }}
       />
