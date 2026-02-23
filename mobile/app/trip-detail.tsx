@@ -213,7 +213,7 @@ export default function TripDetailScreen() {
 
             <View style={styles.pricingRow}>
               <View style={styles.pricingPackageInfo}>
-                <MaterialCommunityIcons name="package-variant-closed-plus" size={16} color={colors.textSecondary} />
+                <MaterialCommunityIcons name="package-variant-closed" size={16} color={colors.textSecondary} />
                 <Text style={styles.pricingPackageLabel}>Large (10 kg)</Text>
               </View>
               <Text style={styles.pricingAmount}>₹{trip.price_per_kg * 10}</Text>
@@ -257,11 +257,11 @@ export default function TripDetailScreen() {
       </ScrollView>
 
       {/* Fixed Bottom CTA */}
-      <Surface style={styles.bottomBar} elevation={8}>
+      <Surface style={styles.bottomBar} elevation={4}>
         <Button
           mode="contained"
           onPress={handleRequestToCarry}
-          icon="package-variant-plus"
+          icon="package-variant"
           contentStyle={styles.ctaButtonContent}
           labelStyle={styles.ctaButtonLabel}
           style={styles.ctaButton}

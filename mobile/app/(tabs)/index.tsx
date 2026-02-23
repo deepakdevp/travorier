@@ -93,7 +93,7 @@ export default function HomeScreen() {
           activeOpacity={0.85}
         >
           <View style={[styles.actionIconWrap, { backgroundColor: colors.successLight }]}>
-            <MaterialCommunityIcons name="package-variant-plus" size={28} color={colors.success} />
+            <MaterialCommunityIcons name="package-variant" size={28} color={colors.success} />
           </View>
           <View style={styles.actionBody}>
             <Text style={styles.actionTitle}>Post Request</Text>
