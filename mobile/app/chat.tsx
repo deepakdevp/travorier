@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
   myBubble: {
     backgroundColor: BUBBLE_BLUE,
     borderRadius: radius.xl,
-    borderBottomRightRadius: radius.xs,
+    borderBottomRightRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 2,
     maxWidth: '75%',
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
   theirBubble: {
     backgroundColor: '#ffffff',
     borderRadius: radius.xl,
-    borderBottomLeftRadius: radius.xs,
+    borderBottomLeftRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 2,
     borderWidth: 1,
