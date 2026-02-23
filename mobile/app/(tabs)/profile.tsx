@@ -10,17 +10,17 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { colors, spacing, radius } from '@/lib/theme';
 
-// Stat icon tint colors (from Stitch design)
+// Stat icon tint colors — sourced from colors palette (theme.ts)
 const STAT_COLORS = {
-  trustScore: { icon: '#2563eb', bg: '#eff6ff' },    // blue-600 / blue-50
-  trips:      { icon: '#9333ea', bg: '#faf5ff' },    // purple-600 / purple-50
-  deliveries: { icon: '#ea580c', bg: '#fff7ed' },    // orange-600 / orange-50
-  rating:     { icon: '#ca8a04', bg: '#fefce8' },    // yellow-600 / yellow-50
+  trustScore: { icon: colors.statTrustIcon, bg: colors.statTrustBg },
+  trips:      { icon: colors.statTripsIcon, bg: colors.statTripsBg },
+  deliveries: { icon: colors.statDelivIcon, bg: colors.statDelivBg },
+  rating:     { icon: colors.statRatingIcon, bg: colors.statRatingBg },
 };
 
-// Menu item icon tint: slate
-const MENU_ICON_BG   = '#f1f5f9';   // slate-100
-const MENU_ICON_COLOR = '#475569';  // slate-600
+// Menu item icon tint: slate — sourced from colors palette (theme.ts)
+const MENU_ICON_BG    = colors.menuIconBg;
+const MENU_ICON_COLOR = colors.menuIconColor;
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
@@ -411,9 +411,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 4,
     paddingHorizontal: spacing.md,
     borderRadius: radius.lg,
-    backgroundColor: '#fef2f2',   // red-50 equivalent
+    backgroundColor: colors.errorLight,
     borderWidth: 1,
-    borderColor: '#fee2e2',       // red-100 equivalent
+    borderColor: colors.errorBorder,
   },
   signOutText: {
     fontSize: 14,

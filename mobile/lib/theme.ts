@@ -32,6 +32,8 @@ export const colors = {
   warning: '#f59e0b',
   warningLight: '#fff8e1',    // tinted warning background
   error: '#ef4444',
+  errorLight: '#fef2f2',      // tinted error background (red-50)
+  errorBorder: '#fee2e2',     // error-tinted border (red-100)
   info: '#3b82f6',
 
   // Text
@@ -47,6 +49,22 @@ export const colors = {
   white: '#ffffff',
   black: '#000000',
   transparent: 'transparent',
+
+  // Profile stat card accent palette (Stitch "User Account Profile" design)
+  // Each stat uses a distinct category color; these live in the global palette
+  // so they remain the single source of truth if reused elsewhere.
+  statTrustIcon: '#2563eb',   // blue-600
+  statTrustBg:   '#eff6ff',   // blue-50
+  statTripsIcon: '#9333ea',   // purple-600
+  statTripsBg:   '#faf5ff',   // purple-50
+  statDelivIcon: '#ea580c',   // orange-600
+  statDelivBg:   '#fff7ed',   // orange-50
+  statRatingIcon:'#ca8a04',   // yellow-600
+  statRatingBg:  '#fefce8',   // yellow-50
+
+  // Menu icon slate tones (Stitch profile menu rows)
+  menuIconBg:    '#f1f5f9',   // slate-100
+  menuIconColor: '#475569',   // slate-600
 };
 
 // ---------------------------------------------------------------------------
