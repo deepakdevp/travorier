@@ -144,18 +144,15 @@ export default function RequestDetailScreen() {
     setUnlocking(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      // In production: deduct 1 credit via Stripe + update match in Supabase
-      unlockContact(pendingMatch.id);
-      setSelectedMatch({ ...pendingMatch, contact_unlocked: true, status: 'accepted' });
+      await unlockContact(pendingMatch.id);
+      setSelectedMatch({ ...pendingMatch, contact_unlocked: true, status: 'agreed' });
 
       setUnlockModalVisible(false);
       setUnlocking(false);
       router.push('/chat');
-    } catch {
+    } catch (err: any) {
       setUnlocking(false);
-      Alert.alert('Error', 'Failed to unlock contact. Please try again.');
+      Alert.alert('Error', err?.message ?? 'Failed to unlock contact. Please try again.');
     }
   };
 

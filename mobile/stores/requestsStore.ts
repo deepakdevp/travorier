@@ -57,7 +57,7 @@ interface RequestsStore {
   setSelectedRequest: (request: Request | null) => void;
   setSelectedMatch: (match: Match | null) => void;
   addRequest: (request: Omit<Request, 'id' | 'sender_id' | 'status' | 'created_at'>) => Promise<void>;
-  acceptMatch: (matchId: string) => void;
+  acceptMatch: (matchId: string) => Promise<void>;
   unlockContact: (matchId: string) => void;
   fetchRequests: () => Promise<void>;
   fetchMatchesForRequest: (requestId: string) => Promise<void>;
@@ -106,11 +106,21 @@ export const useRequestsStore = create<RequestsStore>((set) => ({
     }
   },
 
-  acceptMatch: (matchId) => {
-    // In production: update match status in Supabase
+  acceptMatch: async (matchId) => {
+    const { error } = await supabase
+      .from('matches')
+      .update({ status: 'agreed' })
+      .eq('id', matchId);
+
+    if (error) throw new Error(error.message);
+
+    // Update local state
     set((state) => ({
+      matches: state.matches.map((m) =>
+        m.id === matchId ? { ...m, status: 'agreed' } : m
+      ),
       selectedMatch: state.selectedMatch?.id === matchId
-        ? { ...state.selectedMatch, status: 'accepted' }
+        ? { ...state.selectedMatch, status: 'agreed' }
         : state.selectedMatch,
     }));
   },
