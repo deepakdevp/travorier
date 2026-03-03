@@ -15,10 +15,13 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useTripsStore } from '@/stores/tripsStore';
+import { supabase } from '@/services/supabase';
+import { useAuthStore } from '@/stores/authStore';
 
 export default function RequestToCarryScreen() {
   const router = useRouter();
   const { selectedTrip } = useTripsStore();
+  const { user } = useAuthStore();
 
   const [packageWeight, setPackageWeight] = useState('');
   const [packageDescription, setPackageDescription] = useState('');
@@ -60,27 +63,28 @@ export default function RequestToCarryScreen() {
         {
           text: 'Submit',
           onPress: async () => {
+            if (!user) {
+              Alert.alert('Error', 'You must be logged in to submit a request.');
+              return;
+            }
             setLoading(true);
             try {
-              // Simulate API call
-              await new Promise((resolve) => setTimeout(resolve, 1000));
+              const { error } = await supabase.from('matches').insert({
+                trip_id: trip.id,
+                traveler_id: trip.traveler_id,
+                sender_id: user.id,
+                agreed_weight_kg: weight,
+                agreed_price: estimatedCost,
+                status: 'initiated',
+              });
 
-              // In production, this would be:
-              // const { data, error } = await supabase
-              //   .from('matches')
-              //   .insert({
-              //     trip_id: trip.id,
-              //     sender_id: currentUserId,
-              //     agreed_weight_kg: weight,
-              //     agreed_price: estimatedCost,
-              //     status: 'initiated',
-              //   });
+              if (error) throw new Error(error.message);
 
               setLoading(false);
               router.replace('/match-confirmation');
-            } catch (error) {
+            } catch (err: any) {
               setLoading(false);
-              Alert.alert('Error', 'Failed to submit request. Please try again.');
+              Alert.alert('Error', err?.message ?? 'Failed to submit request. Please try again.');
             }
           },
         },
