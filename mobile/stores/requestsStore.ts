@@ -54,7 +54,7 @@ interface RequestsStore {
   // Actions
   setSelectedRequest: (request: Request | null) => void;
   setSelectedMatch: (match: Match | null) => void;
-  addRequest: (request: Omit<Request, 'id' | 'sender_id' | 'status' | 'created_at'>) => void;
+  addRequest: (request: Omit<Request, 'id' | 'sender_id' | 'status' | 'created_at'>) => Promise<void>;
   acceptMatch: (matchId: string) => void;
   unlockContact: (matchId: string) => void;
   fetchRequests: () => Promise<void>;
@@ -119,15 +119,32 @@ export const useRequestsStore = create<RequestsStore>((set, get) => ({
 
   setSelectedMatch: (match) => set({ selectedMatch: match }),
 
-  addRequest: (requestData) => {
-    const newRequest: Request = {
-      ...requestData,
-      id: `r${Date.now()}`,
-      sender_id: 'current-user',
-      status: 'open',
-      created_at: new Date().toISOString(),
-    };
-    set((state) => ({ requests: [newRequest, ...state.requests] }));
+  addRequest: async (requestData) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const { data, error } = await supabase
+      .from('requests')
+      .insert({
+        sender_id: session.user.id,
+        origin_city: requestData.origin_city,
+        origin_country: requestData.origin_country,
+        destination_city: requestData.destination_city,
+        destination_country: requestData.destination_country,
+        needed_by_date: requestData.needed_by_date,
+        package_weight_kg: requestData.package_weight_kg,
+        package_description: requestData.package_description,
+        package_value: requestData.package_value ?? null,
+        notes: requestData.notes ?? null,
+        status: 'active',
+      })
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+    if (data) {
+      set((state) => ({ requests: [data as Request, ...state.requests] }));
+    }
   },
 
   acceptMatch: (matchId) => {

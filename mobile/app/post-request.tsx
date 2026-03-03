@@ -61,14 +61,7 @@ export default function PostRequestScreen() {
           onPress: async () => {
             setLoading(true);
             try {
-              await new Promise((resolve) => setTimeout(resolve, 800));
-
-              // In production:
-              // const { data, error } = await supabase
-              //   .from('requests')
-              //   .insert({ sender_id: userId, origin_city, ... });
-
-              addRequest({
+              await addRequest({
                 origin_city: originCity.trim(),
                 origin_country: originCountry.trim(),
                 destination_city: destinationCity.trim(),
@@ -77,7 +70,7 @@ export default function PostRequestScreen() {
                 package_weight_kg: weight,
                 package_description: packageDescription.trim(),
                 package_value: packageValue ? parseFloat(packageValue) : undefined,
-                special_instructions: specialInstructions.trim() || undefined,
+                notes: specialInstructions.trim() || undefined,
               });
 
               setLoading(false);
