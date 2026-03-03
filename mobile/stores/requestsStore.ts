@@ -3,6 +3,7 @@
  * Uses Zustand for state management
  */
 import { create } from 'zustand';
+import { supabase } from '@/services/supabase';
 
 export interface Request {
   id: string;
@@ -105,36 +106,6 @@ const MOCK_MATCHES: Match[] = [
   },
 ];
 
-// Mock requests
-const MOCK_REQUESTS: Request[] = [
-  {
-    id: 'r1',
-    sender_id: 'current-user',
-    origin_city: 'Mumbai',
-    origin_country: 'India',
-    destination_city: 'New York',
-    destination_country: 'USA',
-    needed_by_date: '2026-03-20',
-    package_weight_kg: 3,
-    package_description: 'Books and documents for university admission',
-    package_value: 2000,
-    status: 'open',
-    created_at: '2026-02-19T10:00:00Z',
-  },
-  {
-    id: 'r2',
-    sender_id: 'current-user',
-    origin_city: 'Delhi',
-    origin_country: 'India',
-    destination_city: 'London',
-    destination_country: 'UK',
-    needed_by_date: '2026-04-01',
-    package_weight_kg: 5,
-    package_description: 'Traditional Indian sweets and spices for family',
-    status: 'matched',
-    created_at: '2026-02-18T08:30:00Z',
-  },
-];
 
 export const useRequestsStore = create<RequestsStore>((set, get) => ({
   // Initial state
@@ -184,17 +155,26 @@ export const useRequestsStore = create<RequestsStore>((set, get) => ({
   fetchRequests: async () => {
     set({ loading: true, error: null });
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        set({ loading: false });
+        return;
+      }
 
-      // In production:
-      // const { data, error } = await supabase
-      //   .from('requests')
-      //   .select('*')
-      //   .eq('sender_id', currentUserId)
-      //   .order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('requests')
+        .select('*')
+        .eq('sender_id', session.user.id)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
 
-      set({ requests: MOCK_REQUESTS, loading: false });
-    } catch (error) {
+      if (error) {
+        set({ error: error.message, loading: false });
+        return;
+      }
+
+      set({ requests: (data ?? []) as Request[], loading: false });
+    } catch (err) {
       set({ error: 'Failed to fetch requests', loading: false });
     }
   },
