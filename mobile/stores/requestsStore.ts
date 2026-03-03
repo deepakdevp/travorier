@@ -46,6 +46,8 @@ export interface Match {
 interface RequestsStore {
   // State
   requests: Request[];
+  matches: Match[];
+  matchesLoading: boolean;
   selectedRequest: Request | null;
   selectedMatch: Match | null;
   loading: boolean;
@@ -58,58 +60,15 @@ interface RequestsStore {
   acceptMatch: (matchId: string) => void;
   unlockContact: (matchId: string) => void;
   fetchRequests: () => Promise<void>;
-  getMatchesForRequest: (requestId: string) => Match[];
+  fetchMatchesForRequest: (requestId: string) => Promise<void>;
 }
 
-// Mock matches per request
-const MOCK_MATCHES: Match[] = [
-  {
-    id: 'm1',
-    request_id: 'r1',
-    trip_id: '1',
-    traveler: {
-      full_name: 'Rajesh Kumar',
-      trust_score: 85,
-      verified: true,
-    },
-    trip: {
-      origin_city: 'Mumbai',
-      destination_city: 'New York',
-      departure_date: '2026-03-15',
-      airline: 'Air India',
-      flight_number: 'AI191',
-    },
-    agreed_weight_kg: 3,
-    status: 'initiated',
-    contact_unlocked: false,
-  },
-  {
-    id: 'm2',
-    request_id: 'r1',
-    trip_id: '4',
-    traveler: {
-      full_name: 'Sarah Johnson',
-      avatar_url: 'https://i.pravatar.cc/150?img=9',
-      trust_score: 95,
-      verified: true,
-    },
-    trip: {
-      origin_city: 'Mumbai',
-      destination_city: 'New York',
-      departure_date: '2026-03-18',
-      airline: 'Emirates',
-      flight_number: 'EK500',
-    },
-    agreed_weight_kg: 3,
-    status: 'initiated',
-    contact_unlocked: false,
-  },
-];
 
-
-export const useRequestsStore = create<RequestsStore>((set, get) => ({
+export const useRequestsStore = create<RequestsStore>((set) => ({
   // Initial state
   requests: [],
+  matches: [],
+  matchesLoading: false,
   selectedRequest: null,
   selectedMatch: null,
   loading: false,
@@ -165,8 +124,50 @@ export const useRequestsStore = create<RequestsStore>((set, get) => ({
     }));
   },
 
-  getMatchesForRequest: (requestId) => {
-    return MOCK_MATCHES.filter((m) => m.request_id === requestId);
+  fetchMatchesForRequest: async (requestId) => {
+    set({ matchesLoading: true });
+    try {
+      const { data, error } = await supabase
+        .from('matches')
+        .select(`
+          id, request_id, trip_id, status, contact_unlocked, agreed_weight_kg,
+          traveler:profiles!traveler_id(full_name, avatar_url, trust_score, id_verified),
+          trip:trips!trip_id(origin_city, destination_city, departure_date, airline, flight_number)
+        `)
+        .eq('request_id', requestId)
+        .not('status', 'in', '("cancelled","disputed")');
+
+      if (error) {
+        set({ matchesLoading: false });
+        return;
+      }
+
+      const matches: Match[] = (data ?? []).map((row: any) => ({
+        id: row.id,
+        request_id: row.request_id,
+        trip_id: row.trip_id,
+        status: row.status,
+        contact_unlocked: row.contact_unlocked,
+        agreed_weight_kg: row.agreed_weight_kg ?? 0,
+        traveler: {
+          full_name: row.traveler?.full_name ?? 'Unknown',
+          avatar_url: row.traveler?.avatar_url,
+          trust_score: row.traveler?.trust_score ?? 0,
+          verified: row.traveler?.id_verified ?? false,
+        },
+        trip: {
+          origin_city: row.trip?.origin_city ?? '',
+          destination_city: row.trip?.destination_city ?? '',
+          departure_date: row.trip?.departure_date ?? '',
+          airline: row.trip?.airline,
+          flight_number: row.trip?.flight_number,
+        },
+      }));
+
+      set({ matches, matchesLoading: false });
+    } catch (err) {
+      set({ matchesLoading: false });
+    }
   },
 
   fetchRequests: async () => {

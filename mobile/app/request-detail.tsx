@@ -109,7 +109,7 @@ function MatchCard({
 
 export default function RequestDetailScreen() {
   const router = useRouter();
-  const { selectedRequest, setSelectedMatch, unlockContact, getMatchesForRequest } =
+  const { selectedRequest, setSelectedMatch, unlockContact, fetchMatchesForRequest, matches, matchesLoading } =
     useRequestsStore();
   const { balance } = useCreditStore();
   const [unlockModalVisible, setUnlockModalVisible] = useState(false);
@@ -122,12 +122,17 @@ export default function RequestDetailScreen() {
     }
   }, [selectedRequest]);
 
+  useEffect(() => {
+    if (selectedRequest) {
+      fetchMatchesForRequest(selectedRequest.id);
+    }
+  }, [selectedRequest?.id]);
+
   if (!selectedRequest) {
     return null;
   }
 
   const request = selectedRequest;
-  const matches = getMatchesForRequest(request.id);
 
   const handleAcceptMatch = (match: Match) => {
     setPendingMatch(match);
@@ -201,7 +206,9 @@ export default function RequestDetailScreen() {
         {/* Matching Travelers */}
         <View style={styles.matchesSection}>
           <Text variant="titleMedium" style={styles.matchesTitle}>
-            {matches.length} Matching Traveler{matches.length !== 1 ? 's' : ''}
+            {matchesLoading
+              ? 'Loading matches...'
+              : `${matches.length} Matching Traveler${matches.length !== 1 ? 's' : ''}`}
           </Text>
 
           {matches.length === 0 ? (
