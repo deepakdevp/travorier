@@ -58,7 +58,7 @@ interface RequestsStore {
   setSelectedMatch: (match: Match | null) => void;
   addRequest: (request: Omit<Request, 'id' | 'sender_id' | 'status' | 'created_at'>) => Promise<void>;
   acceptMatch: (matchId: string) => Promise<void>;
-  unlockContact: (matchId: string) => void;
+  unlockContact: (matchId: string) => Promise<void>;
   fetchRequests: () => Promise<void>;
   fetchMatchesForRequest: (requestId: string) => Promise<void>;
 }
@@ -125,13 +125,22 @@ export const useRequestsStore = create<RequestsStore>((set) => ({
     }));
   },
 
-  unlockContact: (matchId) => {
-    // In production: deduct 1 credit via Stripe, update match in Supabase
-    set((state) => ({
-      selectedMatch: state.selectedMatch?.id === matchId
-        ? { ...state.selectedMatch, contact_unlocked: true }
-        : state.selectedMatch,
-    }));
+  unlockContact: async (matchId) => {
+    const { data, error } = await supabase.rpc('unlock_contact', { p_match_id: matchId });
+
+    if (error) {
+      // Propagate readable error messages: 'Insufficient credits', 'Match not found', etc.
+      throw new Error(error.message);
+    }
+
+    if (data === true) {
+      // Update local match state
+      set((state) => ({
+        matches: state.matches.map((m) =>
+          m.id === matchId ? { ...m, contact_unlocked: true } : m
+        ),
+      }));
+    }
   },
 
   fetchMatchesForRequest: async (requestId) => {
