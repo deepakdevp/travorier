@@ -21,19 +21,22 @@ import { useRequestsStore, Match } from '@/stores/requestsStore';
 import { useCreditStore } from '@/stores/creditStore';
 
 const STATUS_BG: Record<string, string> = {
-  open: '#E8F5E9',
+  active: '#E8F5E9',
   matched: '#E3F2FD',
   completed: '#F5F5F5',
+  cancelled: '#FAFAFA',
 };
 const STATUS_FG: Record<string, string> = {
-  open: '#2E7D32',
+  active: '#2E7D32',
   matched: '#1976D2',
   completed: '#666666',
+  cancelled: '#999999',
 };
 const STATUS_LABEL: Record<string, string> = {
-  open: 'Open',
+  active: 'Open',
   matched: 'Matched',
   completed: 'Completed',
+  cancelled: 'Cancelled',
 };
 
 function MatchCard({

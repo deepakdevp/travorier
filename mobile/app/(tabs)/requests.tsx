@@ -10,16 +10,18 @@ import { useRequestsStore, Request } from '@/stores/requestsStore';
 
 function RequestCard({ request, onPress }: { request: Request; onPress: (r: Request) => void }) {
   const statusColor = {
-    open: '#00A86B',
+    active: '#00A86B',
     matched: '#0066cc',
     completed: '#666666',
-  }[request.status];
+    cancelled: '#999999',
+  }[request.status] ?? '#999999';
 
   const statusLabel = {
-    open: 'Open',
+    active: 'Open',
     matched: 'Matched',
     completed: 'Completed',
-  }[request.status];
+    cancelled: 'Cancelled',
+  }[request.status] ?? request.status;
 
   return (
     <Card style={styles.card} onPress={() => onPress(request)}>
