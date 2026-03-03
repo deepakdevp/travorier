@@ -15,20 +15,20 @@ export interface Request {
   package_weight_kg: number;
   package_description: string;
   package_value?: number;
-  special_instructions?: string;
-  status: 'open' | 'matched' | 'completed';
+  notes?: string;                          // was: special_instructions (schema uses "notes")
+  status: 'active' | 'matched' | 'completed' | 'cancelled';  // was: 'open' | 'matched' | 'completed'
   created_at: string;
 }
 
 export interface Match {
   id: string;
-  request_id: string;
+  request_id: string | null;              // nullable in schema (direct trip match has no request)
   trip_id: string;
   traveler: {
     full_name: string;
     avatar_url?: string;
     trust_score: number;
-    verified: boolean;
+    verified: boolean;                     // aliased from id_verified in query
   };
   trip: {
     origin_city: string;
@@ -38,7 +38,7 @@ export interface Match {
     flight_number?: string;
   };
   agreed_weight_kg: number;
-  status: 'initiated' | 'accepted' | 'rejected';
+  status: 'initiated' | 'negotiating' | 'agreed' | 'handover_scheduled' | 'in_transit' | 'delivered' | 'cancelled' | 'disputed';
   contact_unlocked: boolean;
 }
 
