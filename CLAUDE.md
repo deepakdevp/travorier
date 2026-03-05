@@ -143,6 +143,26 @@ FastAPI backend provides supplementary endpoints:
 - Supabase handles: Auth, database CRUD (via PostgREST), real-time, storage
 - Backend handles: Stripe payments, FCM notifications, QR generation, manual verification
 
+## Design System
+
+**Source of truth:** `docs/DESIGN.md` — read it before touching any UI.
+**Theme file:** `mobile/lib/theme.ts` — import `AppTheme`, `colors`, `spacing`, `radius`, `statusColors`.
+
+### Rules (non-negotiable)
+- **Primary color is blue `#136dec`** — NOT green. Green (`#16a34a`) is for success/verified only.
+- **Never hardcode colors** in StyleSheets. Use `colors.*` tokens from `mobile/lib/theme.ts`.
+- **Spacing must be multiples of 4px** — use `spacing.*` tokens (xs:4, sm:8, md:16, lg:24, xl:32).
+- **Border radius** must use `radius.*` tokens (sm:4, md:8, lg:12, xl:16, full:9999).
+- **Status chips** use `statusColors.*` tokens (active/matched/completed/cancelled/initiated).
+- `<PaperProvider theme={AppTheme}>` must wrap the root — do not create local themes.
+- See `docs/DESIGN.md` Section 9 for the full rule list.
+
+### Stitch Prompt Prefix
+When generating new screens in Stitch, use:
+> "Inter font, primary blue #136dec, background #f6f7f8, white surfaces, 8px border-radius, airy clean mobile UI, 4px spacing grid."
+
+---
+
 ## Commit Conventions
 
 Follow Conventional Commits format:
