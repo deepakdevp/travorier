@@ -352,7 +352,7 @@ export const useTripsStore = create<TripsStore>((set, get) => ({
         package_weight_kg: row.request?.package_weight_kg ?? null,
         needed_by_date: row.request?.needed_by_date ?? null,
         status: row.status,
-        contact_unlocked: row.contact_unlocked,
+        contact_unlocked: row.contact_unlocked ?? false,
       }));
 
       set({ tripMatches, tripMatchesLoading: false });
