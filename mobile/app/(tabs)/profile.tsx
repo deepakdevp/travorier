@@ -7,15 +7,16 @@ import { Text, Avatar, Card, Button, Divider, List, Surface } from 'react-native
 import { useAuthStore } from '@/stores/authStore';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { colors, spacing, radius } from '@/lib/theme';
 
 export default function ProfileScreen() {
-  const { user, signOut } = useAuthStore();
+  const { user, profile, signOut } = useAuthStore();
   const router = useRouter();
 
-  const userName = user?.user_metadata?.full_name || 'User';
-  const userEmail = user?.email || '';
-  const avatarUrl = user?.user_metadata?.avatar_url;
-  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const userName = profile?.full_name ?? user?.user_metadata?.full_name ?? 'User';
+  const userEmail = profile?.email ?? user?.email ?? '';
+  const avatarUrl = profile?.avatar_url ?? user?.user_metadata?.avatar_url;
+  const userInitials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
   const handleSignOut = async () => {
     Alert.alert(
@@ -63,9 +64,13 @@ export default function ProfileScreen() {
 
         {/* Verification Status */}
         <View style={styles.verificationContainer}>
-          <MaterialCommunityIcons name="shield-check-outline" size={20} color="#666666" />
+          <MaterialCommunityIcons
+            name={profile?.id_verified ? 'shield-check' : 'shield-check-outline'}
+            size={20}
+            color={profile?.id_verified ? '#16a34a' : '#666666'}
+          />
           <Text variant="bodySmall" style={styles.verificationText}>
-            Not Verified
+            {profile?.id_verified ? 'ID Verified' : 'Not Verified'}
           </Text>
         </View>
       </Surface>
@@ -79,22 +84,22 @@ export default function ProfileScreen() {
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
               <MaterialCommunityIcons name="star" size={32} color="#FFB800" />
-              <Text variant="headlineSmall" style={styles.statValue}>0</Text>
+              <Text variant="headlineSmall" style={styles.statValue}>{profile?.trust_score ?? 0}</Text>
               <Text variant="bodySmall" style={styles.statLabel}>Trust Score</Text>
             </View>
             <View style={styles.statItem}>
               <MaterialCommunityIcons name="airplane" size={32} color="#0066cc" />
-              <Text variant="headlineSmall" style={styles.statValue}>0</Text>
+              <Text variant="headlineSmall" style={styles.statValue}>{profile?.total_deliveries ?? 0}</Text>
               <Text variant="bodySmall" style={styles.statLabel}>Trips Posted</Text>
             </View>
             <View style={styles.statItem}>
               <MaterialCommunityIcons name="package-variant-closed" size={32} color="#00A86B" />
-              <Text variant="headlineSmall" style={styles.statValue}>0</Text>
+              <Text variant="headlineSmall" style={styles.statValue}>{profile?.successful_deliveries ?? 0}</Text>
               <Text variant="bodySmall" style={styles.statLabel}>Deliveries</Text>
             </View>
             <View style={styles.statItem}>
               <MaterialCommunityIcons name="star-circle" size={32} color="#9C27B0" />
-              <Text variant="headlineSmall" style={styles.statValue}>0.0</Text>
+              <Text variant="headlineSmall" style={styles.statValue}>{profile?.average_rating != null ? profile.average_rating.toFixed(1) : '0.0'}</Text>
               <Text variant="bodySmall" style={styles.statLabel}>Rating</Text>
             </View>
           </View>
@@ -113,10 +118,7 @@ export default function ProfileScreen() {
           description="Update your personal information"
           left={props => <List.Icon {...props} icon="account-edit" />}
           right={props => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            // TODO: Navigate to edit profile (Milestone 5)
-            Alert.alert('Coming Soon', 'Profile editing will be available in Milestone 5');
-          }}
+          onPress={() => router.push('/edit-profile')}
         />
         <Divider />
         <List.Item
@@ -190,7 +192,7 @@ export default function ProfileScreen() {
           mode="outlined"
           onPress={handleSignOut}
           icon="logout"
-          textColor="#d32f2f"
+          textColor={colors.error}
           style={styles.signOutButton}
         >
           Sign Out
@@ -201,88 +203,21 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    padding: 24,
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    marginBottom: 16,
-  },
-  avatarContainer: {
-    marginBottom: 16,
-  },
-  name: {
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 4,
-  },
-  email: {
-    color: '#666666',
-    marginBottom: 12,
-  },
-  verificationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  verificationText: {
-    marginLeft: 4,
-    color: '#666666',
-  },
-  statsCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    backgroundColor: '#ffffff',
-  },
-  cardTitle: {
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 16,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  statItem: {
-    width: '48%',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  statValue: {
-    fontWeight: 'bold',
-    color: '#333333',
-    marginTop: 8,
-  },
-  statLabel: {
-    color: '#666666',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  settingsCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    backgroundColor: '#ffffff',
-  },
-  infoCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    backgroundColor: '#ffffff',
-  },
-  signOutContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
-  },
-  signOutButton: {
-    borderColor: '#d32f2f',
-  },
+  container: { flex: 1, backgroundColor: colors.background },
+  header: { padding: spacing.lg, alignItems: 'center', backgroundColor: colors.surface, marginBottom: spacing.md },
+  avatarContainer: { marginBottom: spacing.md },
+  name: { fontWeight: 'bold', color: colors.textPrimary, marginBottom: 4 },
+  email: { color: colors.textSecondary, marginBottom: spacing.md },
+  verificationContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, paddingHorizontal: spacing.md, paddingVertical: 6, borderRadius: radius.full },
+  verificationText: { marginLeft: 4, color: colors.textSecondary },
+  statsCard: { marginHorizontal: spacing.md, marginBottom: spacing.md, backgroundColor: colors.surface },
+  cardTitle: { fontWeight: 'bold', color: colors.textPrimary, marginBottom: spacing.md },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  statItem: { width: '48%', alignItems: 'center', padding: spacing.md, backgroundColor: colors.background, borderRadius: radius.md, marginBottom: spacing.md },
+  statValue: { fontWeight: 'bold', color: colors.textPrimary, marginTop: spacing.sm },
+  statLabel: { color: colors.textSecondary, marginTop: 4, textAlign: 'center' },
+  settingsCard: { marginHorizontal: spacing.md, marginBottom: spacing.md, backgroundColor: colors.surface },
+  infoCard: { marginHorizontal: spacing.md, marginBottom: spacing.md, backgroundColor: colors.surface },
+  signOutContainer: { paddingHorizontal: spacing.md, paddingBottom: 32 },
+  signOutButton: { borderColor: colors.error },
 });
