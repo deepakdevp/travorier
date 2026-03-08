@@ -1,8 +1,16 @@
 /**
  * Request Detail Screen
- * Shows request info and matching travelers, allows accepting a match
+ * Shows request info and matching travelers, allows unlocking contact/chat.
+ * Revamped to use design system tokens from mobile/lib/theme.ts
  */
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  FlatList,
+  TouchableOpacity,
+} from 'react-native';
 import {
   Text,
   Avatar,
@@ -10,7 +18,6 @@ import {
   Card,
   Chip,
   Divider,
-  Surface,
   Modal,
   Portal,
 } from 'react-native-paper';
@@ -19,19 +26,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useRequestsStore, Match } from '@/stores/requestsStore';
 import { useCreditStore } from '@/stores/creditStore';
+import { colors, spacing, radius, statusColors } from '@/lib/theme';
 
-const STATUS_BG: Record<string, string> = {
-  active: '#E8F5E9',
-  matched: '#E3F2FD',
-  completed: '#F5F5F5',
-  cancelled: '#FAFAFA',
-};
-const STATUS_FG: Record<string, string> = {
-  active: '#2E7D32',
-  matched: '#1976D2',
-  completed: '#666666',
-  cancelled: '#999999',
-};
+// ─── Status label map ─────────────────────────────────────────────────────────
 const STATUS_LABEL: Record<string, string> = {
   active: 'Open',
   matched: 'Matched',
@@ -39,12 +36,44 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: 'Cancelled',
 };
 
+// ─── Match status label map ───────────────────────────────────────────────────
+const MATCH_STATUS_LABEL: Record<string, string> = {
+  initiated: 'Initiated',
+  negotiating: 'Negotiating',
+  agreed: 'Agreed',
+  handover_scheduled: 'Handover Scheduled',
+  in_transit: 'In Transit',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled',
+  disputed: 'Disputed',
+};
+
+// Map match statuses to statusColors keys
+const matchStatusKey = (
+  status: string
+): keyof typeof statusColors => {
+  const map: Record<string, keyof typeof statusColors> = {
+    initiated: 'initiated',
+    negotiating: 'active',
+    agreed: 'matched',
+    handover_scheduled: 'matched',
+    in_transit: 'active',
+    delivered: 'completed',
+    cancelled: 'cancelled',
+    disputed: 'cancelled',
+  };
+  return map[status] ?? 'initiated';
+};
+
+// ─── Match Card component ─────────────────────────────────────────────────────
 function MatchCard({
   match,
-  onAccept,
+  onUnlock,
+  onChat,
 }: {
   match: Match;
-  onAccept: (match: Match) => void;
+  onUnlock: (match: Match) => void;
+  onChat: (match: Match) => void;
 }) {
   const initials = match.traveler.full_name
     .split(' ')
@@ -53,68 +82,160 @@ function MatchCard({
     .toUpperCase()
     .slice(0, 2);
 
+  const chipKey = matchStatusKey(match.status);
+  const chipColors = statusColors[chipKey];
+
+  const departureDateStr = match.trip.departure_date
+    ? new Date(match.trip.departure_date).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+      })
+    : '';
+
   return (
-    <Card style={styles.matchCard}>
+    <Card style={styles.matchCard} elevation={1}>
       <Card.Content>
-        {/* Traveler */}
+        {/* Traveler row */}
         <View style={styles.travelerRow}>
           {match.traveler.avatar_url ? (
-            <Avatar.Image size={48} source={{ uri: match.traveler.avatar_url }} />
+            <Avatar.Image
+              size={48}
+              source={{ uri: match.traveler.avatar_url }}
+              style={styles.avatar}
+            />
           ) : (
-            <Avatar.Text size={48} label={initials} />
+            <Avatar.Text
+              size={48}
+              label={initials}
+              style={styles.avatar}
+              color={colors.surface}
+            />
           )}
+
           <View style={styles.travelerInfo}>
             <View style={styles.nameRow}>
               <Text variant="titleSmall" style={styles.travelerName}>
                 {match.traveler.full_name}
               </Text>
               {match.traveler.verified && (
-                <MaterialCommunityIcons name="check-decagram" size={16} color="#0066cc" />
+                <MaterialCommunityIcons
+                  name="check-decagram"
+                  size={16}
+                  color={colors.primary}
+                />
               )}
             </View>
-            <View style={styles.scoreRow}>
-              <MaterialCommunityIcons name="star" size={14} color="#FFB800" />
-              <Text variant="bodySmall" style={styles.scoreText}>
-                Trust Score: {match.traveler.trust_score}
+
+            <View style={styles.ratingRow}>
+              <MaterialCommunityIcons
+                name="star"
+                size={13}
+                color={colors.star}
+              />
+              <Text variant="bodySmall" style={styles.ratingText}>
+                {match.traveler.trust_score} trust score
               </Text>
             </View>
+          </View>
+
+          {/* Status chip */}
+          <View
+            style={[
+              styles.statusChip,
+              { backgroundColor: chipColors.bg },
+            ]}
+          >
+            <Text style={[styles.statusChipText, { color: chipColors.text }]}>
+              {MATCH_STATUS_LABEL[match.status] ?? match.status}
+            </Text>
           </View>
         </View>
 
         <Divider style={styles.divider} />
 
-        {/* Flight */}
+        {/* Flight details */}
         <View style={styles.flightRow}>
-          <MaterialCommunityIcons name="airplane" size={16} color="#666666" />
+          <MaterialCommunityIcons
+            name="airplane"
+            size={15}
+            color={colors.textSecondary}
+          />
           <Text variant="bodySmall" style={styles.flightText}>
-            {match.trip.airline ?? ''} {match.trip.flight_number ?? ''} ·{' '}
-            {new Date(match.trip.departure_date).toLocaleDateString('en-IN', {
-              day: 'numeric',
-              month: 'short',
-            })}
+            {[match.trip.airline, match.trip.flight_number]
+              .filter(Boolean)
+              .join(' ')}
+            {departureDateStr ? ` · ${departureDateStr}` : ''}
+          </Text>
+        </View>
+
+        {/* Route summary */}
+        <View style={styles.routeSummaryRow}>
+          <MaterialCommunityIcons
+            name="map-marker-outline"
+            size={13}
+            color={colors.textSecondary}
+          />
+          <Text variant="bodySmall" style={styles.routeSummaryText}>
+            {match.trip.origin_city} → {match.trip.destination_city}
+          </Text>
+        </View>
+
+        {/* Weight */}
+        <View style={styles.weightRow}>
+          <MaterialCommunityIcons
+            name="weight-kilogram"
+            size={13}
+            color={colors.textSecondary}
+          />
+          <Text variant="bodySmall" style={styles.weightText}>
+            {match.agreed_weight_kg} kg agreed
           </Text>
         </View>
       </Card.Content>
-      <Card.Actions>
-        <Button
-          mode="contained"
-          onPress={() => onAccept(match)}
-          icon="handshake"
-          compact
-          style={styles.acceptButton}
-        >
-          Accept & Chat
-        </Button>
+
+      {/* Actions */}
+      <Card.Actions style={styles.cardActions}>
+        {match.contact_unlocked ? (
+          <Button
+            mode="contained"
+            onPress={() => onChat(match)}
+            icon="chat-outline"
+            compact
+            style={styles.chatButton}
+            labelStyle={styles.buttonLabel}
+          >
+            Chat
+          </Button>
+        ) : (
+          <Button
+            mode="contained"
+            onPress={() => onUnlock(match)}
+            icon="lock-open-variant-outline"
+            compact
+            style={styles.unlockButton}
+            labelStyle={styles.buttonLabel}
+          >
+            Unlock Contact
+          </Button>
+        )}
       </Card.Actions>
     </Card>
   );
 }
 
+// ─── Main screen ──────────────────────────────────────────────────────────────
 export default function RequestDetailScreen() {
   const router = useRouter();
-  const { selectedRequest, setSelectedMatch, unlockContact, fetchMatchesForRequest, matches, matchesLoading } =
-    useRequestsStore();
+  const {
+    selectedRequest,
+    setSelectedMatch,
+    unlockContact,
+    fetchMatchesForRequest,
+    matches,
+    matchesLoading,
+  } = useRequestsStore();
   const { balance } = useCreditStore();
+
   const [unlockModalVisible, setUnlockModalVisible] = useState(false);
   const [pendingMatch, setPendingMatch] = useState<Match | null>(null);
   const [unlocking, setUnlocking] = useState(false);
@@ -137,9 +258,30 @@ export default function RequestDetailScreen() {
 
   const request = selectedRequest;
 
-  const handleAcceptMatch = (match: Match) => {
+  const requestStatusKey =
+    (request.status as keyof typeof statusColors) in statusColors
+      ? (request.status as keyof typeof statusColors)
+      : 'active';
+  const requestChipColors = statusColors[requestStatusKey];
+
+  const neededByStr = request.needed_by_date
+    ? new Date(request.needed_by_date).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    : '';
+
+  // ─── Handlers ──────────────────────────────────────────────────────────────
+
+  const handleUnlock = (match: Match) => {
     setPendingMatch(match);
     setUnlockModalVisible(true);
+  };
+
+  const handleChat = (match: Match) => {
+    setSelectedMatch(match);
+    router.push('/chat');
   };
 
   const handleConfirmUnlock = async () => {
@@ -149,7 +291,6 @@ export default function RequestDetailScreen() {
     try {
       await unlockContact(pendingMatch.id);
       setSelectedMatch({ ...pendingMatch, contact_unlocked: true, status: 'agreed' });
-
       setUnlockModalVisible(false);
       setUnlocking(false);
       router.push('/chat');
@@ -159,113 +300,258 @@ export default function RequestDetailScreen() {
     }
   };
 
+  // ─── Render ────────────────────────────────────────────────────────────────
+
+  const renderMatchItem = ({ item }: { item: Match }) => (
+    <MatchCard match={item} onUnlock={handleUnlock} onChat={handleChat} />
+  );
+
+  const renderEmptyMatches = () => (
+    <View style={styles.emptyState}>
+      <MaterialCommunityIcons
+        name="account-search-outline"
+        size={56}
+        color={colors.border}
+      />
+      <Text variant="titleSmall" style={styles.emptyTitle}>
+        No matches yet
+      </Text>
+      <Text variant="bodySmall" style={styles.emptySubtitle}>
+        We'll notify you when a traveler matches your route.
+      </Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        {/* Request Summary */}
-        <Surface style={styles.header} elevation={2}>
-          <View style={styles.routeRow}>
-            <View style={styles.cityBlock}>
-              <Text variant="headlineSmall" style={styles.cityText}>
-                {request.origin_city}
-              </Text>
-              <Text variant="bodySmall" style={styles.countryText}>
-                {request.origin_country}
-              </Text>
-            </View>
-            <MaterialCommunityIcons name="arrow-right" size={28} color="#00A86B" />
-            <View style={styles.cityBlock}>
-              <Text variant="headlineSmall" style={styles.cityText}>
-                {request.destination_city}
-              </Text>
-              <Text variant="bodySmall" style={styles.countryText}>
-                {request.destination_country}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.metaRow}>
-            <Chip icon="weight-kilogram" compact style={styles.metaChip}>
-              {request.package_weight_kg} kg
-            </Chip>
-            <Chip icon="calendar" compact style={styles.metaChip}>
-              By {new Date(request.needed_by_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-            </Chip>
-            <Chip
-              compact
-              style={[styles.metaChip, { backgroundColor: STATUS_BG[request.status] ?? '#F5F5F5' }]}
-              textStyle={{ color: STATUS_FG[request.status] ?? '#666666' }}
-            >
-              {STATUS_LABEL[request.status] ?? request.status}
-            </Chip>
-          </View>
-          <Text variant="bodyMedium" style={styles.descriptionText}>
-            {request.package_description}
-          </Text>
-        </Surface>
+      {/* ── Header bar ─────────────────────────────────────────────────── */}
+      <View style={styles.headerBar}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={24}
+            color={colors.textPrimary}
+          />
+        </TouchableOpacity>
 
-        {/* Matching Travelers */}
-        <View style={styles.matchesSection}>
-          <Text variant="titleMedium" style={styles.matchesTitle}>
-            {matchesLoading
-              ? 'Loading matches...'
-              : `${matches.length} Matching Traveler${matches.length !== 1 ? 's' : ''}`}
-          </Text>
+        <Text variant="titleMedium" style={styles.headerTitle}>
+          Package Request
+        </Text>
 
-          {matches.length === 0 ? (
-            <Card style={styles.emptyCard}>
-              <Card.Content style={styles.emptyContent}>
-                <MaterialCommunityIcons name="account-search" size={48} color="#cccccc" />
-                <Text variant="bodyMedium" style={styles.emptyText}>
-                  No matches yet. We'll notify you when a traveler matches your route.
-                </Text>
-              </Card.Content>
-            </Card>
-          ) : (
-            matches.map((match) => (
-              <MatchCard key={match.id} match={match} onAccept={handleAcceptMatch} />
-            ))
-          )}
+        {/* Request status chip */}
+        <View
+          style={[
+            styles.headerStatusChip,
+            { backgroundColor: requestChipColors.bg },
+          ]}
+        >
+          <Text
+            style={[styles.headerStatusText, { color: requestChipColors.text }]}
+          >
+            {STATUS_LABEL[request.status] ?? request.status}
+          </Text>
         </View>
+      </View>
 
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
+      <FlatList
+        data={matches}
+        keyExtractor={(item) => item.id}
+        renderItem={renderMatchItem}
+        ListEmptyComponent={matchesLoading ? null : renderEmptyMatches()}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <>
+            {/* ── Request details card ───────────────────────────────── */}
+            <View style={styles.detailsCard}>
+              {/* Route */}
+              <View style={styles.routeRow}>
+                <View style={styles.cityBlock}>
+                  <Text variant="headlineMedium" style={styles.cityText}>
+                    {request.origin_city}
+                  </Text>
+                  <Text variant="bodySmall" style={styles.countryText}>
+                    {request.origin_country}
+                  </Text>
+                </View>
 
-      {/* Unlock Contact Modal */}
+                <View style={styles.arrowContainer}>
+                  <MaterialCommunityIcons
+                    name="arrow-right"
+                    size={28}
+                    color={colors.primary}
+                  />
+                </View>
+
+                <View style={[styles.cityBlock, styles.cityBlockRight]}>
+                  <Text variant="headlineMedium" style={styles.cityText}>
+                    {request.destination_city}
+                  </Text>
+                  <Text variant="bodySmall" style={styles.countryText}>
+                    {request.destination_country}
+                  </Text>
+                </View>
+              </View>
+
+              <Divider style={styles.detailsDivider} />
+
+              {/* Meta chips */}
+              <View style={styles.metaRow}>
+                <Chip
+                  icon="weight-kilogram"
+                  compact
+                  style={styles.metaChip}
+                  textStyle={styles.metaChipText}
+                >
+                  {request.package_weight_kg} kg
+                </Chip>
+                {neededByStr ? (
+                  <Chip
+                    icon="calendar-outline"
+                    compact
+                    style={styles.metaChip}
+                    textStyle={styles.metaChipText}
+                  >
+                    By {neededByStr}
+                  </Chip>
+                ) : null}
+              </View>
+
+              {/* Description */}
+              {request.package_description ? (
+                <View style={styles.descriptionSection}>
+                  <Text variant="labelMedium" style={styles.sectionLabel}>
+                    Package Description
+                  </Text>
+                  <Text variant="bodyMedium" style={styles.descriptionText}>
+                    {request.package_description}
+                  </Text>
+                </View>
+              ) : null}
+
+              {/* Notes */}
+              {request.notes ? (
+                <View style={styles.notesSection}>
+                  <Text variant="labelMedium" style={styles.sectionLabel}>
+                    Notes
+                  </Text>
+                  <Text variant="bodyMedium" style={styles.descriptionText}>
+                    {request.notes}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+
+            {/* ── Matches section heading ────────────────────────────── */}
+            <View style={styles.matchesHeading}>
+              <Text variant="titleMedium" style={styles.matchesTitle}>
+                Traveler Matches
+              </Text>
+              {!matchesLoading && (
+                <View style={styles.matchCountBadge}>
+                  <Text style={styles.matchCountText}>{matches.length}</Text>
+                </View>
+              )}
+              {matchesLoading && (
+                <Text variant="bodySmall" style={styles.loadingText}>
+                  Loading...
+                </Text>
+              )}
+            </View>
+          </>
+        }
+        ListFooterComponent={<View style={styles.listFooter} />}
+      />
+
+      {/* ── Unlock Contact Modal ──────────────────────────────────────────── */}
       <Portal>
         <Modal
           visible={unlockModalVisible}
           onDismiss={() => setUnlockModalVisible(false)}
-          contentContainerStyle={styles.modal}
+          contentContainerStyle={styles.modalOverlay}
         >
-          <MaterialCommunityIcons name="lock-open-variant" size={48} color="#00A86B" style={styles.modalIcon} />
-          <Text variant="headlineSmall" style={styles.modalTitle}>
-            Unlock Contact
-          </Text>
-          <Text variant="bodyMedium" style={styles.modalText}>
-            Use 1 credit (₹99) to unlock{' '}
-            <Text style={styles.bold}>{pendingMatch?.traveler.full_name}</Text>'s contact
-            details and start chatting.
-          </Text>
-          <Text variant="bodySmall" style={styles.modalNote}>
-            Your credits balance: {balance} credits
-          </Text>
-          <View style={styles.modalActions}>
-            <Button
-              mode="outlined"
-              onPress={() => setUnlockModalVisible(false)}
-              style={styles.modalButton}
-            >
-              Cancel
-            </Button>
-            <Button
-              mode="contained"
-              onPress={handleConfirmUnlock}
-              loading={unlocking}
-              disabled={unlocking}
-              style={styles.modalButton}
-            >
-              Unlock (1 credit)
-            </Button>
+          <View style={styles.modalSheet}>
+            {/* Modal handle */}
+            <View style={styles.modalHandle} />
+
+            {/* Icon */}
+            <View style={styles.modalIconWrapper}>
+              <MaterialCommunityIcons
+                name="lock-open-variant"
+                size={32}
+                color={colors.primary}
+              />
+            </View>
+
+            {/* Title */}
+            <Text variant="headlineSmall" style={styles.modalTitle}>
+              Unlock Contact Details
+            </Text>
+
+            {/* Traveler name */}
+            {pendingMatch && (
+              <Text variant="bodyMedium" style={styles.modalTravelerName}>
+                {pendingMatch.traveler.full_name}
+              </Text>
+            )}
+
+            {/* Cost info */}
+            <View style={styles.costBox}>
+              <MaterialCommunityIcons
+                name="credit-card-outline"
+                size={18}
+                color={colors.primary}
+              />
+              <Text variant="bodyMedium" style={styles.costText}>
+                Use{' '}
+                <Text style={styles.costHighlight}>1 credit (₹99)</Text> to
+                unlock contact details
+              </Text>
+            </View>
+
+            {/* Balance */}
+            <View style={styles.balanceRow}>
+              <MaterialCommunityIcons
+                name="wallet-outline"
+                size={15}
+                color={colors.textSecondary}
+              />
+              <Text variant="bodySmall" style={styles.balanceText}>
+                Current Balance:{' '}
+                <Text style={styles.balanceBold}>{balance} Credits</Text>
+              </Text>
+            </View>
+
+            {/* Trust note */}
+            <Text variant="bodySmall" style={styles.trustNote}>
+              Secure transaction via Payment Gateway
+            </Text>
+
+            {/* Buttons */}
+            <View style={styles.modalActions}>
+              <Button
+                mode="outlined"
+                onPress={() => setUnlockModalVisible(false)}
+                style={styles.cancelButton}
+                labelStyle={styles.cancelLabel}
+                disabled={unlocking}
+              >
+                Cancel
+              </Button>
+              <Button
+                mode="contained"
+                onPress={handleConfirmUnlock}
+                loading={unlocking}
+                disabled={unlocking}
+                style={styles.confirmButton}
+                labelStyle={styles.confirmLabel}
+              >
+                Unlock (1 credit)
+              </Button>
+            </View>
           </View>
         </Modal>
       </Portal>
@@ -273,40 +559,368 @@ export default function RequestDetailScreen() {
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  scrollView: { flex: 1 },
-  header: { padding: 20, backgroundColor: '#ffffff', marginBottom: 8 },
-  routeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  cityBlock: { flex: 1 },
-  cityText: { fontWeight: 'bold', color: '#333333' },
-  countryText: { color: '#666666', marginTop: 2 },
-  metaRow: { flexDirection: 'row', gap: 8, marginBottom: 12, flexWrap: 'wrap' },
-  metaChip: { backgroundColor: '#f5f5f5' },
-  descriptionText: { color: '#555555', lineHeight: 20 },
-  matchesSection: { padding: 16 },
-  matchesTitle: { fontWeight: 'bold', color: '#333333', marginBottom: 12 },
-  matchCard: { backgroundColor: '#ffffff', marginBottom: 12 },
-  travelerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  travelerInfo: { flex: 1, marginLeft: 12 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
-  travelerName: { fontWeight: 'bold', color: '#333333' },
-  scoreRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  scoreText: { color: '#666666' },
-  divider: { marginBottom: 12 },
-  flightRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  flightText: { color: '#666666' },
-  acceptButton: { backgroundColor: '#00A86B' },
-  emptyCard: { backgroundColor: '#ffffff' },
-  emptyContent: { alignItems: 'center', paddingVertical: 32 },
-  emptyText: { textAlign: 'center', color: '#999999', marginTop: 12, paddingHorizontal: 16 },
-  bottomSpacing: { height: 40 },
-  modal: { backgroundColor: '#ffffff', margin: 24, borderRadius: 12, padding: 24 },
-  modalIcon: { textAlign: 'center', marginBottom: 12 },
-  modalTitle: { fontWeight: 'bold', color: '#333333', textAlign: 'center', marginBottom: 8 },
-  modalText: { color: '#555555', textAlign: 'center', marginBottom: 8, lineHeight: 22 },
-  modalNote: { color: '#00A86B', textAlign: 'center', marginBottom: 20 },
-  bold: { fontWeight: 'bold' },
-  modalActions: { flexDirection: 'row', gap: 12 },
-  modalButton: { flex: 1 },
+  // ── Screen ──────────────────────────────────────────────────────────────────
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+
+  // ── Header bar ───────────────────────────────────────────────────────────────
+  headerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 4,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  backButton: {
+    marginRight: spacing.sm,
+  },
+  headerTitle: {
+    flex: 1,
+    color: colors.textPrimary,
+    fontWeight: '600',
+  },
+  headerStatusChip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+  },
+  headerStatusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  // ── FlatList ─────────────────────────────────────────────────────────────────
+  listContent: {
+    paddingBottom: spacing.xl,
+  },
+  listFooter: {
+    height: spacing.xl,
+  },
+
+  // ── Request details card ──────────────────────────────────────────────────────
+  detailsCard: {
+    backgroundColor: colors.surface,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  routeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  cityBlock: {
+    flex: 1,
+  },
+  cityBlockRight: {
+    alignItems: 'flex-end',
+  },
+  cityText: {
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  countryText: {
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  arrowContainer: {
+    paddingHorizontal: spacing.sm,
+  },
+  detailsDivider: {
+    backgroundColor: colors.border,
+    marginBottom: spacing.md,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    flexWrap: 'wrap',
+    marginBottom: spacing.md,
+  },
+  metaChip: {
+    backgroundColor: colors.primarySubtle,
+  },
+  metaChipText: {
+    color: colors.primary,
+    fontSize: 12,
+  },
+  descriptionSection: {
+    marginBottom: spacing.sm,
+  },
+  notesSection: {
+    marginBottom: spacing.xs,
+  },
+  sectionLabel: {
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  descriptionText: {
+    color: colors.textPrimary,
+    lineHeight: 22,
+  },
+
+  // ── Matches heading ───────────────────────────────────────────────────────────
+  matchesHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+  },
+  matchesTitle: {
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  matchCountBadge: {
+    backgroundColor: colors.primary,
+    width: 22,
+    height: 22,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  matchCountText: {
+    color: colors.surface,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  loadingText: {
+    color: colors.textSecondary,
+  },
+
+  // ── Match card ────────────────────────────────────────────────────────────────
+  matchCard: {
+    backgroundColor: colors.surface,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  travelerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  avatar: {
+    backgroundColor: colors.primarySubtle,
+  },
+  travelerInfo: {
+    flex: 1,
+    marginLeft: spacing.sm,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  travelerName: {
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  ratingText: {
+    color: colors.textSecondary,
+  },
+  statusChip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    alignSelf: 'flex-start',
+  },
+  statusChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  divider: {
+    backgroundColor: colors.border,
+    marginBottom: spacing.sm,
+  },
+  flightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  flightText: {
+    color: colors.textSecondary,
+    flex: 1,
+  },
+  routeSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  routeSummaryText: {
+    color: colors.textSecondary,
+    flex: 1,
+  },
+  weightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  weightText: {
+    color: colors.textSecondary,
+  },
+  cardActions: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+    paddingTop: 0,
+  },
+  unlockButton: {
+    backgroundColor: colors.primary,
+    flex: 1,
+  },
+  chatButton: {
+    backgroundColor: colors.success,
+    flex: 1,
+  },
+  buttonLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  // ── Empty state ───────────────────────────────────────────────────────────────
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: spacing.xxl,
+    paddingHorizontal: spacing.xl,
+    marginHorizontal: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  emptyTitle: {
+    color: colors.textPrimary,
+    fontWeight: '600',
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  emptySubtitle: {
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+
+  // ── Unlock Contact Modal ──────────────────────────────────────────────────────
+  modalOverlay: {
+    justifyContent: 'flex-end',
+    margin: 0,
+  },
+  modalSheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
+    paddingTop: spacing.md,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: colors.border,
+    borderRadius: radius.full,
+    alignSelf: 'center',
+    marginBottom: spacing.md,
+  },
+  modalIconWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: spacing.md,
+  },
+  modalTitle: {
+    fontWeight: '700',
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: spacing.xs,
+  },
+  modalTravelerName: {
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  costBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.primarySubtle,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  costText: {
+    color: colors.textPrimary,
+    flex: 1,
+    lineHeight: 22,
+  },
+  costHighlight: {
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  balanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+  balanceText: {
+    color: colors.textSecondary,
+  },
+  balanceBold: {
+    color: colors.textPrimary,
+    fontWeight: '700',
+  },
+  trustNote: {
+    color: colors.textDisabled,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+    marginTop: spacing.xs,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  cancelButton: {
+    flex: 1,
+    borderColor: colors.border,
+  },
+  cancelLabel: {
+    color: colors.textPrimary,
+    fontWeight: '600',
+  },
+  confirmButton: {
+    flex: 1,
+    backgroundColor: colors.primary,
+  },
+  confirmLabel: {
+    color: colors.surface,
+    fontWeight: '700',
+  },
 });
