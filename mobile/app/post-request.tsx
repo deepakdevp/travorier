@@ -7,14 +7,15 @@ import {
   Text,
   TextInput,
   Button,
-  Card,
   HelperText,
   Surface,
+  Divider,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useRequestsStore } from '@/stores/requestsStore';
+import { colors, spacing, radius } from '@/lib/theme';
 
 export default function PostRequestScreen() {
   const router = useRouter();
@@ -89,149 +90,224 @@ export default function PostRequestScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        {/* Route Section */}
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text variant="titleMedium" style={styles.sectionTitle}>
-              Route
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+
+        {/* Route Details Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>ROUTE DETAILS</Text>
+
+          <View style={styles.card}>
+            <View style={styles.fieldRow}>
+              <MaterialCommunityIcons name="airplane-takeoff" size={20} color={colors.primary} style={styles.fieldIcon} />
+              <View style={styles.fieldInputs}>
+                <Text style={styles.fieldLabel}>Origin</Text>
+                <View style={styles.rowInputs}>
+                  <TextInput
+                    label="City *"
+                    value={originCity}
+                    onChangeText={setOriginCity}
+                    mode="outlined"
+                    outlineColor={colors.border}
+                    activeOutlineColor={colors.primary}
+                    style={[styles.input, styles.flex2]}
+                    contentStyle={styles.inputContent}
+                  />
+                  <TextInput
+                    label="Country *"
+                    value={originCountry}
+                    onChangeText={setOriginCountry}
+                    mode="outlined"
+                    outlineColor={colors.border}
+                    activeOutlineColor={colors.primary}
+                    style={[styles.input, styles.flex1]}
+                    contentStyle={styles.inputContent}
+                  />
+                </View>
+              </View>
+            </View>
+
+            <Divider style={styles.fieldDivider} />
+
+            <View style={styles.fieldRow}>
+              <MaterialCommunityIcons name="airplane-landing" size={20} color={colors.primary} style={styles.fieldIcon} />
+              <View style={styles.fieldInputs}>
+                <Text style={styles.fieldLabel}>Destination</Text>
+                <View style={styles.rowInputs}>
+                  <TextInput
+                    label="City *"
+                    value={destinationCity}
+                    onChangeText={setDestinationCity}
+                    mode="outlined"
+                    outlineColor={colors.border}
+                    activeOutlineColor={colors.primary}
+                    style={[styles.input, styles.flex2]}
+                    contentStyle={styles.inputContent}
+                  />
+                  <TextInput
+                    label="Country *"
+                    value={destinationCountry}
+                    onChangeText={setDestinationCountry}
+                    mode="outlined"
+                    outlineColor={colors.border}
+                    activeOutlineColor={colors.primary}
+                    style={[styles.input, styles.flex1]}
+                    contentStyle={styles.inputContent}
+                  />
+                </View>
+              </View>
+            </View>
+
+            <Divider style={styles.fieldDivider} />
+
+            <View style={styles.fieldRow}>
+              <MaterialCommunityIcons name="calendar-today" size={20} color={colors.primary} style={styles.fieldIcon} />
+              <View style={styles.fieldInputs}>
+                <Text style={styles.fieldLabel}>Needed By</Text>
+                <TextInput
+                  label="Date * (YYYY-MM-DD)"
+                  value={neededByDate}
+                  onChangeText={setNeededByDate}
+                  mode="outlined"
+                  outlineColor={colors.border}
+                  activeOutlineColor={colors.primary}
+                  style={styles.input}
+                  contentStyle={styles.inputContent}
+                  placeholder="e.g. 2026-03-20"
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Package Details Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>PACKAGE DETAILS</Text>
+
+          <View style={styles.card}>
+            {/* Weight */}
+            <View style={styles.fieldRow}>
+              <MaterialCommunityIcons name="weight-kilogram" size={20} color={colors.primary} style={styles.fieldIcon} />
+              <View style={styles.fieldInputs}>
+                <Text style={styles.fieldLabel}>Weight (kg) *</Text>
+                <TextInput
+                  label="e.g. 2.5"
+                  value={packageWeight}
+                  onChangeText={setPackageWeight}
+                  keyboardType="decimal-pad"
+                  mode="outlined"
+                  outlineColor={colors.border}
+                  activeOutlineColor={colors.primary}
+                  style={styles.input}
+                  contentStyle={styles.inputContent}
+                />
+                <HelperText type="info" visible={weight > 0} style={styles.helperText}>
+                  {weight} kg requested
+                </HelperText>
+              </View>
+            </View>
+
+            <Divider style={styles.fieldDivider} />
+
+            {/* Description */}
+            <View style={styles.fieldRow}>
+              <MaterialCommunityIcons name="package-variant" size={20} color={colors.primary} style={styles.fieldIcon} />
+              <View style={styles.fieldInputs}>
+                <Text style={styles.fieldLabel}>Package Description *</Text>
+                <TextInput
+                  label="What's in the package?"
+                  value={packageDescription}
+                  onChangeText={setPackageDescription}
+                  mode="outlined"
+                  multiline
+                  numberOfLines={3}
+                  outlineColor={colors.border}
+                  activeOutlineColor={colors.primary}
+                  style={styles.input}
+                  contentStyle={styles.inputContent}
+                  placeholder="e.g. Books, clothes, electronics (no prohibited items)"
+                  error={packageDescription.trim().length > 0 && packageDescription.trim().length < 10}
+                />
+                <HelperText
+                  type={packageDescription.trim().length > 0 && packageDescription.trim().length < 10 ? 'error' : 'info'}
+                  visible={true}
+                  style={styles.helperText}
+                >
+                  {packageDescription.trim().length < 10
+                    ? `Minimum 10 characters (${packageDescription.trim().length}/10)`
+                    : 'Be specific — traveler needs to know what they are carrying'}
+                </HelperText>
+              </View>
+            </View>
+
+            <Divider style={styles.fieldDivider} />
+
+            {/* Estimated Value */}
+            <View style={styles.fieldRow}>
+              <MaterialCommunityIcons name="currency-inr" size={20} color={colors.textSecondary} style={styles.fieldIcon} />
+              <View style={styles.fieldInputs}>
+                <View style={styles.optionalLabelRow}>
+                  <Text style={styles.fieldLabel}>Estimated Value (₹)</Text>
+                  <Text style={styles.optionalBadge}>Optional</Text>
+                </View>
+                <TextInput
+                  label="e.g. 500"
+                  value={packageValue}
+                  onChangeText={setPackageValue}
+                  keyboardType="decimal-pad"
+                  mode="outlined"
+                  outlineColor={colors.border}
+                  activeOutlineColor={colors.primary}
+                  style={styles.input}
+                  contentStyle={styles.inputContent}
+                />
+                <HelperText type="info" visible={true} style={styles.helperText}>
+                  Helps traveler understand insurance needs
+                </HelperText>
+              </View>
+            </View>
+
+            <Divider style={styles.fieldDivider} />
+
+            {/* Special Instructions */}
+            <View style={styles.fieldRow}>
+              <MaterialCommunityIcons name="information-outline" size={20} color={colors.textSecondary} style={styles.fieldIcon} />
+              <View style={styles.fieldInputs}>
+                <View style={styles.optionalLabelRow}>
+                  <Text style={styles.fieldLabel}>Special Instructions</Text>
+                  <Text style={styles.optionalBadge}>Optional</Text>
+                </View>
+                <TextInput
+                  label="Handle with care, fragile, etc."
+                  value={specialInstructions}
+                  onChangeText={setSpecialInstructions}
+                  mode="outlined"
+                  multiline
+                  numberOfLines={3}
+                  outlineColor={colors.border}
+                  activeOutlineColor={colors.primary}
+                  style={styles.input}
+                  contentStyle={styles.inputContent}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Info Banner */}
+        <View style={styles.infoBanner}>
+          <View style={styles.infoItem}>
+            <MaterialCommunityIcons name="bell-ring-outline" size={18} color={colors.primary} />
+            <Text style={styles.infoText}>
+              Matching travelers will be notified about your request
             </Text>
-
-            <View style={styles.rowInputs}>
-              <TextInput
-                label="Origin City *"
-                value={originCity}
-                onChangeText={setOriginCity}
-                mode="outlined"
-                style={[styles.input, styles.flex2]}
-              />
-              <TextInput
-                label="Country *"
-                value={originCountry}
-                onChangeText={setOriginCountry}
-                mode="outlined"
-                style={[styles.input, styles.flex1]}
-              />
-            </View>
-
-            <View style={styles.arrowRow}>
-              <MaterialCommunityIcons name="arrow-down" size={24} color="#00A86B" />
-            </View>
-
-            <View style={styles.rowInputs}>
-              <TextInput
-                label="Destination City *"
-                value={destinationCity}
-                onChangeText={setDestinationCity}
-                mode="outlined"
-                style={[styles.input, styles.flex2]}
-              />
-              <TextInput
-                label="Country *"
-                value={destinationCountry}
-                onChangeText={setDestinationCountry}
-                mode="outlined"
-                style={[styles.input, styles.flex1]}
-              />
-            </View>
-          </Card.Content>
-        </Card>
-
-        {/* Package Section */}
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text variant="titleMedium" style={styles.sectionTitle}>
-              Package Details
+          </View>
+          <View style={styles.infoItem}>
+            <MaterialCommunityIcons name="lock-open-outline" size={18} color={colors.primary} />
+            <Text style={styles.infoText}>
+              Unlock traveler contact for ₹99 (1 credit) after match
             </Text>
-
-            <TextInput
-              label="Needed by Date * (YYYY-MM-DD)"
-              value={neededByDate}
-              onChangeText={setNeededByDate}
-              mode="outlined"
-              left={<TextInput.Icon icon="calendar" />}
-              style={styles.input}
-              placeholder="e.g. 2026-03-20"
-            />
-
-            <TextInput
-              label="Package Weight (kg) *"
-              value={packageWeight}
-              onChangeText={setPackageWeight}
-              keyboardType="decimal-pad"
-              mode="outlined"
-              left={<TextInput.Icon icon="weight-kilogram" />}
-              style={styles.input}
-            />
-            <HelperText type="info" visible={weight > 0}>
-              {weight} kg requested
-            </HelperText>
-
-            <TextInput
-              label="Package Description *"
-              value={packageDescription}
-              onChangeText={setPackageDescription}
-              mode="outlined"
-              multiline
-              numberOfLines={4}
-              left={<TextInput.Icon icon="package-variant" />}
-              style={styles.input}
-              placeholder="e.g. Books, clothes, electronics (no prohibited items)"
-              error={packageDescription.trim().length > 0 && packageDescription.trim().length < 10}
-            />
-            <HelperText
-              type={packageDescription.trim().length > 0 && packageDescription.trim().length < 10 ? 'error' : 'info'}
-              visible={true}
-            >
-              {packageDescription.trim().length < 10
-                ? `Minimum 10 characters (${packageDescription.trim().length}/10)`
-                : 'Be specific — traveler needs to know what they are carrying'}
-            </HelperText>
-
-            <TextInput
-              label="Estimated Value (₹) (Optional)"
-              value={packageValue}
-              onChangeText={setPackageValue}
-              keyboardType="decimal-pad"
-              mode="outlined"
-              left={<TextInput.Icon icon="currency-inr" />}
-              style={styles.input}
-            />
-            <HelperText type="info" visible={true}>
-              Helps traveler understand insurance needs
-            </HelperText>
-
-            <TextInput
-              label="Special Instructions (Optional)"
-              value={specialInstructions}
-              onChangeText={setSpecialInstructions}
-              mode="outlined"
-              multiline
-              numberOfLines={3}
-              left={<TextInput.Icon icon="message-text" />}
-              style={styles.input}
-              placeholder="Handle with care, fragile, etc."
-            />
-          </Card.Content>
-        </Card>
-
-        {/* Info */}
-        <Card style={styles.infoCard}>
-          <Card.Content>
-            <View style={styles.infoItem}>
-              <MaterialCommunityIcons name="information" size={20} color="#0066cc" />
-              <Text variant="bodySmall" style={styles.infoText}>
-                Matching travelers will be notified about your request
-              </Text>
-            </View>
-            <View style={styles.infoItem}>
-              <MaterialCommunityIcons name="lock-open" size={20} color="#0066cc" />
-              <Text variant="bodySmall" style={styles.infoText}>
-                Unlock traveler contact for ₹99 (1 credit) after match
-              </Text>
-            </View>
-          </Card.Content>
-        </Card>
+          </View>
+        </View>
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -243,8 +319,10 @@ export default function PostRequestScreen() {
           loading={loading}
           disabled={!isValid() || loading}
           icon="send"
+          buttonColor={colors.primary}
           contentStyle={styles.buttonContent}
           style={styles.submitButton}
+          labelStyle={styles.submitButtonLabel}
         >
           Post Request
         </Button>
@@ -254,20 +332,138 @@ export default function PostRequestScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  scrollView: { flex: 1 },
-  card: { marginHorizontal: 16, marginVertical: 8, backgroundColor: '#ffffff' },
-  sectionTitle: { fontWeight: 'bold', color: '#333333', marginBottom: 16 },
-  rowInputs: { flexDirection: 'row', gap: 8 },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+
+  // Section wrapper
+  section: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+    textTransform: 'uppercase',
+  },
+
+  // Card surface
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+
+  // Field row inside card
+  fieldRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  fieldIcon: {
+    marginTop: spacing.sm + 2,
+    marginRight: spacing.md,
+  },
+  fieldInputs: {
+    flex: 1,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  optionalLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+    gap: spacing.sm,
+  },
+  optionalBadge: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.full,
+    overflow: 'hidden',
+  },
+
+  // Inputs
+  rowInputs: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
   flex1: { flex: 1 },
   flex2: { flex: 2 },
-  input: { backgroundColor: '#ffffff', marginBottom: 4 },
-  arrowRow: { alignItems: 'center', marginVertical: 4 },
-  infoCard: { marginHorizontal: 16, marginVertical: 8, backgroundColor: '#E3F2FD' },
-  infoItem: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
-  infoText: { flex: 1, marginLeft: 12, color: '#666666', lineHeight: 18 },
+  input: {
+    backgroundColor: colors.surface,
+    marginBottom: 0,
+  },
+  inputContent: {
+    fontSize: 14,
+  },
+  helperText: {
+    marginTop: 0,
+    paddingLeft: 0,
+  },
+
+  fieldDivider: {
+    backgroundColor: colors.border,
+  },
+
+  // Info banner
+  infoBanner: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.primarySubtle,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.primary,
+    lineHeight: 18,
+  },
+
+  // Bottom
   bottomSpacing: { height: 100 },
-  bottomBar: { backgroundColor: '#ffffff', padding: 16, borderTopWidth: 1, borderTopColor: '#e0e0e0' },
-  submitButton: { borderRadius: 8 },
-  buttonContent: { paddingVertical: 8 },
+  bottomBar: {
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  submitButton: {
+    borderRadius: radius.md,
+  },
+  submitButtonLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  buttonContent: {
+    paddingVertical: spacing.sm,
+  },
 });
