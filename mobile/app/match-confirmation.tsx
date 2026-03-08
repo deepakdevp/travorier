@@ -2,12 +2,12 @@
  * Match Confirmation Screen
  * Success screen after submitting a request to carry
  */
-import { View, StyleSheet } from 'react-native';
-import { Text, Button, Card } from 'react-native-paper';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Text, Button, Card, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTripsStore } from '@/stores/tripsStore';
-import LottieView from 'lottie-react-native';
+import { colors, spacing, radius } from '@/lib/theme';
 
 export default function MatchConfirmationScreen() {
   const router = useRouter();
@@ -20,258 +20,425 @@ export default function MatchConfirmationScreen() {
   };
 
   const handleViewMatches = () => {
-    router.replace('/(tabs)');
+    router.replace('/(tabs)/requests');
   };
 
   const handleBrowseMore = () => {
-    router.replace('/(tabs)/trips');
+    router.replace('/(tabs)');
   };
 
-  return (
-    <View style={styles.container}>
-      {/* Success Animation */}
-      <View style={styles.animationContainer}>
-        <MaterialCommunityIcons name="check-circle" size={120} color="#00A86B" />
-      </View>
+  const steps = [
+    {
+      icon: 'clock-outline' as const,
+      title: 'Traveler Reviews Request',
+      description: 'The traveler will review your request, typically within 24 hours',
+    },
+    {
+      icon: 'bell-ring-outline' as const,
+      title: 'Get Notified',
+      description: "You'll receive an instant notification when the traveler accepts",
+    },
+    {
+      icon: 'shield-check-outline' as const,
+      title: 'Confirm & Secure Payment',
+      description: 'Confirm details and secure your payment in escrow',
+    },
+    {
+      icon: 'handshake-outline' as const,
+      title: 'Coordinate Handover',
+      description: 'Meet at an agreed public location for the package handover',
+    },
+  ];
 
-      {/* Success Message */}
-      <View style={styles.messageContainer}>
+  return (
+    <ScrollView
+      style={styles.scrollContainer}
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Success Hero */}
+      <View style={styles.heroSection}>
+        <View style={styles.successCircle}>
+          <MaterialCommunityIcons name="check" size={56} color={colors.surface} />
+        </View>
         <Text variant="headlineMedium" style={styles.title}>
-          Request Sent Successfully!
+          Request Sent!
         </Text>
         <Text variant="bodyLarge" style={styles.subtitle}>
           Your package delivery request has been sent to the traveler
         </Text>
       </View>
 
-      {/* Trip Summary */}
+      {/* Trip Details Card */}
       {selectedTrip && (
-        <Card style={styles.tripCard}>
-          <Card.Content>
+        <Card style={styles.tripCard} elevation={0}>
+          <Card.Content style={styles.tripCardContent}>
+            <Text variant="labelMedium" style={styles.cardLabel}>
+              LOGISTICS MATCH
+            </Text>
+
+            {/* Route */}
             <View style={styles.routeRow}>
-              <Text variant="titleMedium" style={styles.cityText}>
-                {selectedTrip.origin_city}
+              <View style={styles.cityBlock}>
+                <Text variant="titleLarge" style={styles.cityText}>
+                  {selectedTrip.origin_city}
+                </Text>
+              </View>
+              <MaterialCommunityIcons
+                name="airplane"
+                size={22}
+                color={colors.primary}
+                style={styles.airplaneIcon}
+              />
+              <View style={styles.cityBlock}>
+                <Text variant="titleLarge" style={styles.cityText}>
+                  {selectedTrip.destination_city}
+                </Text>
+              </View>
+            </View>
+
+            <Divider style={styles.divider} />
+
+            {/* Traveler */}
+            <View style={styles.detailRow}>
+              <MaterialCommunityIcons
+                name="account-circle-outline"
+                size={18}
+                color={colors.textSecondary}
+              />
+              <Text variant="bodyMedium" style={styles.detailText}>
+                {selectedTrip.traveler.full_name}
               </Text>
-              <MaterialCommunityIcons name="arrow-right" size={20} color="#666666" />
-              <Text variant="titleMedium" style={styles.cityText}>
-                {selectedTrip.destination_city}
+              {selectedTrip.pnr_verified && (
+                <View style={styles.verifiedBadge}>
+                  <MaterialCommunityIcons name="check-decagram" size={14} color={colors.success} />
+                  <Text variant="labelSmall" style={styles.verifiedText}>
+                    Verified
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Date */}
+            <View style={styles.detailRow}>
+              <MaterialCommunityIcons
+                name="calendar-outline"
+                size={18}
+                color={colors.textSecondary}
+              />
+              <Text variant="bodyMedium" style={styles.detailText}>
+                {new Date(selectedTrip.departure_date).toLocaleDateString('en-IN', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                })}
               </Text>
             </View>
-            <Text variant="bodyMedium" style={styles.travelerText}>
-              Traveler: {selectedTrip.traveler.full_name}
-            </Text>
-            <Text variant="bodySmall" style={styles.dateText}>
-              Departure: {new Date(selectedTrip.departure_date).toLocaleDateString('en-IN', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })}
-            </Text>
+
+            {/* Weight & Price */}
+            <View style={styles.detailRow}>
+              <MaterialCommunityIcons
+                name="weight-kilogram"
+                size={18}
+                color={colors.textSecondary}
+              />
+              <Text variant="bodyMedium" style={styles.detailText}>
+                Up to {selectedTrip.available_weight_kg} kg · ₹{selectedTrip.price_per_kg}/kg
+              </Text>
+            </View>
           </Card.Content>
         </Card>
       )}
 
-      {/* Next Steps */}
-      <Card style={styles.stepsCard}>
-        <Card.Content>
+      {/* What Happens Next */}
+      <Card style={styles.stepsCard} elevation={0}>
+        <Card.Content style={styles.stepsCardContent}>
           <Text variant="titleMedium" style={styles.stepsTitle}>
             What Happens Next?
           </Text>
 
-          <View style={styles.stepItem}>
-            <View style={styles.stepIconContainer}>
-              <MaterialCommunityIcons name="clock-outline" size={24} color="#0066cc" />
+          {steps.map((step, index) => (
+            <View key={index} style={styles.stepItem}>
+              <View style={styles.stepLeft}>
+                <View style={styles.stepNumberBadge}>
+                  <Text variant="labelSmall" style={styles.stepNumber}>
+                    {index + 1}
+                  </Text>
+                </View>
+                {index < steps.length - 1 && <View style={styles.stepConnector} />}
+              </View>
+              <View style={styles.stepBody}>
+                <View style={styles.stepIconRow}>
+                  <View style={styles.stepIconContainer}>
+                    <MaterialCommunityIcons
+                      name={step.icon}
+                      size={20}
+                      color={colors.primary}
+                    />
+                  </View>
+                  <Text variant="titleSmall" style={styles.stepTitle}>
+                    {step.title}
+                  </Text>
+                </View>
+                <Text variant="bodySmall" style={styles.stepText}>
+                  {step.description}
+                </Text>
+              </View>
             </View>
-            <View style={styles.stepContent}>
-              <Text variant="titleSmall" style={styles.stepTitle}>
-                Traveler Reviews Request
-              </Text>
-              <Text variant="bodySmall" style={styles.stepText}>
-                The traveler will review your request and confirm availability
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.stepItem}>
-            <View style={styles.stepIconContainer}>
-              <MaterialCommunityIcons name="bell-ring" size={24} color="#0066cc" />
-            </View>
-            <View style={styles.stepContent}>
-              <Text variant="titleSmall" style={styles.stepTitle}>
-                Get Notified
-              </Text>
-              <Text variant="bodySmall" style={styles.stepText}>
-                You'll receive a notification when the traveler responds
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.stepItem}>
-            <View style={styles.stepIconContainer}>
-              <MaterialCommunityIcons name="lock-open" size={24} color="#0066cc" />
-            </View>
-            <View style={styles.stepContent}>
-              <Text variant="titleSmall" style={styles.stepTitle}>
-                Unlock Contact
-              </Text>
-              <Text variant="bodySmall" style={styles.stepText}>
-                Use 1 credit (₹99) to unlock contact details and start chatting
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.stepItem}>
-            <View style={styles.stepIconContainer}>
-              <MaterialCommunityIcons name="handshake" size={24} color="#0066cc" />
-            </View>
-            <View style={styles.stepContent}>
-              <Text variant="titleSmall" style={styles.stepTitle}>
-                Coordinate Delivery
-              </Text>
-              <Text variant="bodySmall" style={styles.stepText}>
-                Discuss handover details, finalize delivery fee, and arrange meeting
-              </Text>
-            </View>
-          </View>
+          ))}
         </Card.Content>
       </Card>
 
       {/* Action Buttons */}
       <View style={styles.actionsContainer}>
         <Button
+          mode="contained"
+          onPress={handleViewMatches}
+          style={styles.primaryButton}
+          contentStyle={styles.buttonContent}
+          labelStyle={styles.primaryButtonLabel}
+        >
+          View My Requests
+        </Button>
+
+        <Button
           mode="outlined"
           onPress={handleBrowseMore}
           style={styles.secondaryButton}
           contentStyle={styles.buttonContent}
+          labelStyle={styles.secondaryButtonLabel}
         >
-          Browse More Trips
-        </Button>
-
-        <Button
-          mode="contained"
-          onPress={handleViewMatches}
-          icon="home"
-          style={styles.primaryButton}
-          contentStyle={styles.buttonContent}
-        >
-          Go to Homepage
+          Back to Home
         </Button>
       </View>
 
       {/* Info Note */}
       <View style={styles.infoNote}>
-        <MaterialCommunityIcons name="information" size={16} color="#666666" />
+        <MaterialCommunityIcons name="information-outline" size={15} color={colors.textSecondary} />
         <Text variant="bodySmall" style={styles.infoText}>
-          You can view all your matches and messages in the Profile tab
+          Track all your matches and messages in the Requests tab
         </Text>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scrollContainer: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    padding: 16,
+    backgroundColor: colors.background,
   },
-  animationContainer: {
-    alignItems: 'center',
-    paddingVertical: 32,
+  container: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xl,
   },
-  messageContainer: {
+
+  // Hero
+  heroSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: spacing.lg,
+  },
+  successCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: radius.full,
+    backgroundColor: colors.success,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+    shadowColor: colors.success,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
   title: {
-    fontWeight: 'bold',
-    color: '#00A86B',
+    fontWeight: '700',
+    color: colors.textPrimary,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   subtitle: {
-    color: '#666666',
+    color: colors.textSecondary,
     textAlign: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
+    lineHeight: 22,
   },
+
+  // Trip Card
   tripCard: {
-    backgroundColor: '#ffffff',
-    marginBottom: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.md,
+  },
+  tripCardContent: {
+    paddingVertical: spacing.md,
+  },
+  cardLabel: {
+    color: colors.textSecondary,
+    letterSpacing: 0.8,
+    marginBottom: spacing.md,
   },
   routeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  cityBlock: {
+    flex: 1,
   },
   cityText: {
-    fontWeight: 'bold',
-    color: '#333333',
+    fontWeight: '700',
+    color: colors.textPrimary,
   },
-  travelerText: {
-    color: '#666666',
-    marginBottom: 4,
+  airplaneIcon: {
+    marginHorizontal: spacing.sm,
+    transform: [{ rotate: '45deg' }],
   },
-  dateText: {
-    color: '#999999',
+  divider: {
+    backgroundColor: colors.border,
+    marginBottom: spacing.md,
   },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  detailText: {
+    color: colors.textSecondary,
+    flex: 1,
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.successSubtle,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+  },
+  verifiedText: {
+    color: colors.success,
+    fontWeight: '600',
+  },
+
+  // Steps Card
   stepsCard: {
-    backgroundColor: '#ffffff',
-    marginBottom: 24,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.lg,
+  },
+  stepsCardContent: {
+    paddingVertical: spacing.md,
   },
   stepsTitle: {
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: spacing.md,
   },
   stepItem: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: spacing.md,
   },
-  stepIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#E3F2FD',
+  stepLeft: {
+    alignItems: 'center',
+    width: 28,
+    marginRight: spacing.md,
+  },
+  stepNumberBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySubtle,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
-  stepContent: {
+  stepNumber: {
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  stepConnector: {
     flex: 1,
+    width: 2,
+    backgroundColor: colors.border,
+    marginTop: spacing.xs,
+    minHeight: spacing.lg,
+  },
+  stepBody: {
+    flex: 1,
+    paddingBottom: spacing.xs,
+  },
+  stepIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  stepIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   stepTitle: {
-    color: '#333333',
+    color: colors.textPrimary,
     fontWeight: '600',
-    marginBottom: 4,
+    flex: 1,
   },
   stepText: {
-    color: '#666666',
+    color: colors.textSecondary,
     lineHeight: 18,
+    paddingLeft: 44,
   },
+
+  // Buttons
   actionsContainer: {
-    gap: 12,
-    marginBottom: 16,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   primaryButton: {
-    borderRadius: 8,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primary,
   },
   secondaryButton: {
-    borderRadius: 8,
+    borderRadius: radius.lg,
+    borderColor: colors.border,
   },
   buttonContent: {
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
   },
+  primaryButtonLabel: {
+    color: colors.surface,
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  secondaryButtonLabel: {
+    color: colors.textPrimary,
+    fontWeight: '600',
+    fontSize: 15,
+  },
+
+  // Info Note
   infoNote: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
   },
   infoText: {
-    color: '#666666',
+    color: colors.textSecondary,
     textAlign: 'center',
     flex: 1,
+    lineHeight: 18,
   },
 });
