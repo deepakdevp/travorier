@@ -8,14 +8,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  TouchableOpacity,
+  TextInput,
 } from 'react-native';
-import { Text, TextInput, Surface, Avatar } from 'react-native-paper';
+import { Text, Avatar, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/services/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { useRequestsStore } from '@/stores/requestsStore';
+import { colors, spacing, radius } from '@/lib/theme';
 
 interface Message {
   id: string;
@@ -139,25 +142,50 @@ export default function ChatScreen() {
     }
   };
 
+  const travelerInitials = traveler.full_name
+    .split(' ')
+    .map((n: string) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
   const renderMessage = ({ item }: { item: Message }) => {
     const isMe = item.sender_id === currentUserId;
     return (
       <View
         style={[
-          styles.messageBubbleContainer,
-          isMe ? styles.myMessageContainer : styles.theirMessageContainer,
+          styles.messageRow,
+          isMe ? styles.messageRowRight : styles.messageRowLeft,
         ]}
       >
-        <View style={[styles.messageBubble, isMe ? styles.myBubble : styles.theirBubble]}>
-          <Text
-            variant="bodyMedium"
-            style={isMe ? styles.myMessageText : styles.theirMessageText}
+        {/* Avatar on the left for received messages */}
+        {!isMe && (
+          <View style={styles.receivedAvatarWrapper}>
+            {traveler.avatar_url ? (
+              <Avatar.Image size={28} source={{ uri: traveler.avatar_url }} />
+            ) : (
+              <Avatar.Text size={28} label={travelerInitials} style={styles.receivedAvatar} />
+            )}
+          </View>
+        )}
+
+        <View style={styles.bubbleCol}>
+          <View
+            style={[
+              styles.bubble,
+              isMe ? styles.sentBubble : styles.receivedBubble,
+            ]}
           >
-            {item.content}
-          </Text>
+            <Text
+              variant="bodyMedium"
+              style={isMe ? styles.sentText : styles.receivedText}
+            >
+              {item.content}
+            </Text>
+          </View>
           <Text
-            variant="bodySmall"
-            style={[styles.timestamp, isMe ? styles.myTimestamp : styles.theirTimestamp]}
+            variant="labelSmall"
+            style={[styles.timestamp, isMe ? styles.timestampRight : styles.timestampLeft]}
           >
             {new Date(item.created_at).toLocaleTimeString('en-IN', {
               hour: '2-digit',
@@ -169,79 +197,85 @@ export default function ChatScreen() {
     );
   };
 
-  const travelerInitials = traveler.full_name
-    .split(' ')
-    .map((n: string) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={90}
     >
-      {/* Chat Header */}
-      <Surface style={styles.header} elevation={2}>
-        <View style={styles.headerContent}>
+      {/* ── Header ── */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.textPrimary} />
+        </TouchableOpacity>
+
+        <View style={styles.headerAvatar}>
           {traveler.avatar_url ? (
             <Avatar.Image size={40} source={{ uri: traveler.avatar_url }} />
           ) : (
-            <Avatar.Text size={40} label={travelerInitials} />
+            <Avatar.Text size={40} label={travelerInitials} style={styles.headerAvatarText} />
           )}
-          <View style={styles.headerInfo}>
-            <Text variant="titleSmall" style={styles.travelerName}>
+          {/* Online indicator dot */}
+          <View style={styles.onlineDot} />
+        </View>
+
+        <View style={styles.headerInfo}>
+          <View style={styles.headerNameRow}>
+            <Text variant="titleSmall" style={styles.headerName}>
               {traveler.full_name}
             </Text>
-            <Text variant="bodySmall" style={styles.routeText}>
-              {selectedMatch.trip.origin_city} → {selectedMatch.trip.destination_city}
-            </Text>
+            {traveler.verified && (
+              <MaterialCommunityIcons
+                name="check-decagram"
+                size={16}
+                color={colors.primary}
+                style={styles.verifiedIcon}
+              />
+            )}
           </View>
-          {traveler.verified && (
-            <MaterialCommunityIcons name="check-decagram" size={20} color="#0066cc" />
-          )}
+          <Text variant="labelSmall" style={styles.headerRoute}>
+            {selectedMatch.trip.origin_city} → {selectedMatch.trip.destination_city}
+          </Text>
         </View>
-      </Surface>
+      </View>
 
-      {/* Chat Lock / Info Banner */}
+      {/* ── Chat Lock / Info Banner ── */}
       {isChatLocked ? (
         <View style={styles.lockBanner}>
-          <MaterialCommunityIcons name="lock" size={16} color="#ffffff" />
-          <Text variant="bodySmall" style={styles.lockText}>
+          <MaterialCommunityIcons name="lock" size={14} color={colors.surface} />
+          <Text variant="labelSmall" style={styles.lockBannerText}>
             Chat locked 24 hours after flight
           </Text>
         </View>
       ) : (
         <View style={styles.infoBanner}>
-          <MaterialCommunityIcons name="information" size={14} color="#666666" />
-          <Text variant="bodySmall" style={styles.infoText}>
+          <MaterialCommunityIcons name="information-outline" size={14} color={colors.textSecondary} />
+          <Text variant="labelSmall" style={styles.infoBannerText}>
             Chat available until 24h after flight on{' '}
             {flightDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
           </Text>
         </View>
       )}
 
-      {/* Messages */}
+      {/* ── Messages ── */}
       {loadingHistory ? (
-        <View style={styles.loadingContainer}>
-          <Text variant="bodyMedium" style={styles.loadingText}>
-            Loading messages...
+        <View style={styles.centeredState}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text variant="bodySmall" style={styles.centeredStateText}>
+            Loading messages…
           </Text>
         </View>
       ) : loadError ? (
-        <View style={styles.loadingContainer}>
-          <MaterialCommunityIcons name="alert-circle-outline" size={48} color="#cccccc" />
-          <Text variant="bodyMedium" style={styles.loadingText}>
+        <View style={styles.centeredState}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={44} color={colors.border} />
+          <Text variant="bodyMedium" style={styles.centeredStateText}>
             Failed to load messages
           </Text>
-          <Text
-            variant="bodySmall"
-            style={[styles.loadingText, { color: '#0066cc', marginTop: 8 }]}
-            onPress={loadMessageHistory}
-          >
-            Tap to retry
-          </Text>
+          <TouchableOpacity onPress={loadMessageHistory} style={styles.retryButton}>
+            <Text variant="labelMedium" style={styles.retryButtonText}>
+              Tap to retry
+            </Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -251,10 +285,11 @@ export default function ChatScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messagesList}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+          showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <View style={styles.emptyChat}>
-              <MaterialCommunityIcons name="chat-outline" size={48} color="#cccccc" />
-              <Text variant="bodyMedium" style={styles.emptyChatText}>
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons name="chat-outline" size={48} color={colors.border} />
+              <Text variant="bodyMedium" style={styles.emptyStateText}>
                 Say hi to start the conversation!
               </Text>
             </View>
@@ -262,84 +297,260 @@ export default function ChatScreen() {
         />
       )}
 
-      {/* Input Bar */}
-      <Surface style={styles.inputBar} elevation={4}>
-        <TextInput
-          value={inputText}
-          onChangeText={setInputText}
-          placeholder={isChatLocked ? 'Chat is locked' : 'Type a message...'}
-          mode="outlined"
-          style={styles.textInput}
-          dense
-          disabled={isChatLocked}
-          onSubmitEditing={sendMessage}
-          returnKeyType="send"
-          right={
-            <TextInput.Icon
-              icon="send"
-              disabled={!inputText.trim() || sending || isChatLocked || !user}
-              onPress={sendMessage}
-              color={inputText.trim() && !isChatLocked ? '#0066cc' : '#cccccc'}
-            />
-          }
-        />
-      </Surface>
+      {/* ── Input Bar ── */}
+      <View style={styles.inputBar}>
+        <View style={styles.inputWrapper}>
+          <TextInput
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder={isChatLocked ? 'Chat is locked' : 'Type a message…'}
+            placeholderTextColor={colors.textDisabled}
+            style={styles.textInput}
+            editable={!isChatLocked}
+            onSubmitEditing={sendMessage}
+            returnKeyType="send"
+            multiline
+          />
+        </View>
+
+        <TouchableOpacity
+          onPress={sendMessage}
+          disabled={!inputText.trim() || sending || isChatLocked || !user}
+          style={[
+            styles.sendButton,
+            (!inputText.trim() || sending || isChatLocked || !user) && styles.sendButtonDisabled,
+          ]}
+          activeOpacity={0.8}
+        >
+          {sending ? (
+            <ActivityIndicator size={16} color={colors.surface} />
+          ) : (
+            <MaterialCommunityIcons name="send" size={20} color={colors.surface} />
+          )}
+        </TouchableOpacity>
+      </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0f0f0' },
-  header: { backgroundColor: '#ffffff', paddingHorizontal: 16, paddingVertical: 12 },
-  headerContent: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  headerInfo: { flex: 1 },
-  travelerName: { fontWeight: 'bold', color: '#333333' },
-  routeText: { color: '#666666' },
+  // ── Layout ──────────────────────────────────────────────────────────────
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+
+  // ── Header ──────────────────────────────────────────────────────────────
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 4,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    gap: spacing.sm,
+  },
+  backButton: {
+    padding: spacing.xs,
+    marginRight: spacing.xs,
+  },
+  headerAvatar: {
+    position: 'relative',
+  },
+  headerAvatarText: {
+    backgroundColor: colors.primarySubtle,
+  },
+  onlineDot: {
+    position: 'absolute',
+    bottom: 1,
+    right: 1,
+    width: 10,
+    height: 10,
+    borderRadius: radius.full,
+    backgroundColor: colors.success,
+    borderWidth: 1.5,
+    borderColor: colors.surface,
+  },
+  headerInfo: {
+    flex: 1,
+  },
+  headerNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  headerName: {
+    color: colors.textPrimary,
+    fontWeight: '700',
+  },
+  verifiedIcon: {
+    marginTop: 1,
+  },
+  headerRoute: {
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
+
+  // ── Banners ──────────────────────────────────────────────────────────────
   lockBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#666666',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    gap: spacing.xs,
+    backgroundColor: colors.textSecondary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  lockText: { color: '#ffffff' },
+  lockBannerText: {
+    color: colors.surface,
+  },
   infoBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#FFF9E6',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    gap: spacing.xs,
+    backgroundColor: colors.warningSubtle,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  infoText: { color: '#666666', flex: 1 },
-  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loadingText: { color: '#999999' },
-  messagesList: { padding: 16, paddingBottom: 8 },
-  messageBubbleContainer: { marginBottom: 8 },
-  myMessageContainer: { alignItems: 'flex-end' },
-  theirMessageContainer: { alignItems: 'flex-start' },
-  messageBubble: {
-    maxWidth: '75%',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 18,
+  infoBannerText: {
+    color: colors.textSecondary,
+    flex: 1,
   },
-  myBubble: { backgroundColor: '#0066cc', borderBottomRightRadius: 4 },
-  theirBubble: { backgroundColor: '#ffffff', borderBottomLeftRadius: 4 },
-  myMessageText: { color: '#ffffff' },
-  theirMessageText: { color: '#333333' },
-  timestamp: { fontSize: 10, marginTop: 4 },
-  myTimestamp: { color: 'rgba(255,255,255,0.7)', textAlign: 'right' },
-  theirTimestamp: { color: '#999999' },
-  emptyChat: { alignItems: 'center', paddingVertical: 60 },
-  emptyChatText: { color: '#999999', marginTop: 12 },
+
+  // ── Message list ─────────────────────────────────────────────────────────
+  messagesList: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    flexGrow: 1,
+  },
+
+  // ── Message row ──────────────────────────────────────────────────────────
+  messageRow: {
+    flexDirection: 'row',
+    marginBottom: spacing.sm + 4,
+    alignItems: 'flex-end',
+  },
+  messageRowLeft: {
+    justifyContent: 'flex-start',
+  },
+  messageRowRight: {
+    justifyContent: 'flex-end',
+  },
+
+  // ── Avatar (received) ────────────────────────────────────────────────────
+  receivedAvatarWrapper: {
+    marginRight: spacing.sm,
+    marginBottom: 2,
+  },
+  receivedAvatar: {
+    backgroundColor: colors.primarySubtle,
+  },
+
+  // ── Bubble ───────────────────────────────────────────────────────────────
+  bubbleCol: {
+    maxWidth: '72%',
+  },
+  bubble: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radius.xl,
+  },
+  sentBubble: {
+    backgroundColor: colors.primary,
+    borderBottomRightRadius: radius.sm,
+  },
+  receivedBubble: {
+    backgroundColor: colors.surface,
+    borderBottomLeftRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  sentText: {
+    color: colors.surface,
+  },
+  receivedText: {
+    color: colors.textPrimary,
+  },
+
+  // ── Timestamp ────────────────────────────────────────────────────────────
+  timestamp: {
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+    fontSize: 10,
+  },
+  timestampRight: {
+    textAlign: 'right',
+  },
+  timestampLeft: {
+    textAlign: 'left',
+  },
+
+  // ── States ───────────────────────────────────────────────────────────────
+  centeredState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  centeredStateText: {
+    color: colors.textSecondary,
+  },
+  retryButton: {
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySubtle,
+  },
+  retryButtonText: {
+    color: colors.primary,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: spacing.xxl,
+    gap: spacing.sm,
+  },
+  emptyStateText: {
+    color: colors.textSecondary,
+  },
+
+  // ── Input bar ────────────────────────────────────────────────────────────
   inputBar: {
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: colors.border,
+    gap: spacing.sm,
   },
-  textInput: { backgroundColor: '#ffffff', flex: 1 },
+  inputWrapper: {
+    flex: 1,
+    backgroundColor: colors.background,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  textInput: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    lineHeight: 20,
+    maxHeight: 100,
+  },
+  sendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendButtonDisabled: {
+    backgroundColor: colors.textDisabled,
+  },
 });
