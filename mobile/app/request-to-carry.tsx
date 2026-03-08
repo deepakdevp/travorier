@@ -3,20 +3,14 @@
  * Form for senders to request travelers to carry their package
  */
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import {
-  Text,
-  TextInput,
-  Button,
-  Card,
-  HelperText,
-  Surface,
-} from 'react-native-paper';
+import { Text, TextInput, Button, HelperText, Surface } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useTripsStore } from '@/stores/tripsStore';
 import { supabase } from '@/services/supabase';
 import { useAuthStore } from '@/stores/authStore';
+import { colors, spacing, radius } from '@/lib/theme';
 
 export default function RequestToCarryScreen() {
   const router = useRouter();
@@ -94,166 +88,228 @@ export default function RequestToCarryScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        {/* Trip Summary */}
-        <Surface style={styles.tripSummary} elevation={2}>
-          <View style={styles.routeRow}>
-            <Text variant="titleMedium" style={styles.cityText}>
-              {trip.origin_city}
-            </Text>
-            <MaterialCommunityIcons name="arrow-right" size={20} color="#666666" />
-            <Text variant="titleMedium" style={styles.cityText}>
-              {trip.destination_city}
+      {/* Header */}
+      <View style={styles.header}>
+        <Button
+          mode="text"
+          onPress={() => router.back()}
+          icon="arrow-left"
+          textColor={colors.textPrimary}
+          style={styles.backButton}
+          contentStyle={styles.backButtonContent}
+          compact
+        >
+          {''}
+        </Button>
+        <Text variant="titleLarge" style={styles.headerTitle}>
+          Request to Carry
+        </Text>
+        <View style={styles.headerSpacer} />
+      </View>
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Trip Summary Card */}
+        <View style={styles.tripCard}>
+          <View style={styles.tripCardHeader}>
+            <MaterialCommunityIcons name="airplane" size={18} color={colors.primary} />
+            <Text variant="labelMedium" style={styles.tripCardLabel}>
+              Trip Details
             </Text>
           </View>
-          <Text variant="bodySmall" style={styles.travelerText}>
-            Traveler: {trip.traveler.full_name}
+
+          <View style={styles.routeRow}>
+            <View style={styles.cityBlock}>
+              <MaterialCommunityIcons name="map-marker" size={16} color={colors.textSecondary} />
+              <Text variant="titleMedium" style={styles.cityText}>
+                {trip.origin_city}
+              </Text>
+            </View>
+            <MaterialCommunityIcons name="arrow-right" size={20} color={colors.textSecondary} />
+            <View style={styles.cityBlock}>
+              <MaterialCommunityIcons name="map-marker-check" size={16} color={colors.primary} />
+              <Text variant="titleMedium" style={styles.cityText}>
+                {trip.destination_city}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.tripMeta}>
+            <View style={styles.tripMetaItem}>
+              <MaterialCommunityIcons name="account" size={14} color={colors.textSecondary} />
+              <Text variant="bodySmall" style={styles.tripMetaText}>
+                {trip.traveler.full_name}
+              </Text>
+            </View>
+            <View style={styles.tripMetaItem}>
+              <MaterialCommunityIcons name="calendar" size={14} color={colors.textSecondary} />
+              <Text variant="bodySmall" style={styles.tripMetaText}>
+                {new Date(trip.departure_date).toLocaleDateString('en-IN', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                })}
+              </Text>
+            </View>
+            <View style={styles.tripMetaItem}>
+              <MaterialCommunityIcons name="scale" size={14} color={colors.textSecondary} />
+              <Text variant="bodySmall" style={styles.tripMetaText}>
+                {trip.available_weight_kg} kg available
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Package Details Form */}
+        <View style={styles.section}>
+          <Text variant="titleSmall" style={styles.sectionTitle}>
+            Package Details
           </Text>
-          <Text variant="bodySmall" style={styles.dateText}>
-            {new Date(trip.departure_date).toLocaleDateString('en-IN', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric',
-            })}
-          </Text>
-        </Surface>
 
-        {/* Request Form */}
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text variant="titleMedium" style={styles.sectionTitle}>
-              Package Details
-            </Text>
+          {/* Package Weight */}
+          <TextInput
+            label="Package Weight (kg) *"
+            value={packageWeight}
+            onChangeText={setPackageWeight}
+            keyboardType="decimal-pad"
+            mode="outlined"
+            left={<TextInput.Icon icon="weight-kilogram" color={colors.textSecondary} />}
+            style={styles.input}
+            outlineColor={colors.border}
+            activeOutlineColor={colors.primary}
+            error={packageWeight.length > 0 && weight > trip.available_weight_kg}
+          />
+          <HelperText
+            type={packageWeight.length > 0 && weight > trip.available_weight_kg ? 'error' : 'info'}
+            visible={packageWeight.length > 0}
+            style={styles.helperText}
+          >
+            {weight > trip.available_weight_kg
+              ? `Exceeds available capacity (${trip.available_weight_kg} kg)`
+              : `Available capacity: ${trip.available_weight_kg} kg`}
+          </HelperText>
 
-            {/* Package Weight */}
-            <TextInput
-              label="Package Weight (kg) *"
-              value={packageWeight}
-              onChangeText={setPackageWeight}
-              keyboardType="decimal-pad"
-              mode="outlined"
-              left={<TextInput.Icon icon="weight-kilogram" />}
-              style={styles.input}
-              error={weight > trip.available_weight_kg}
-            />
-            <HelperText
-              type={weight > trip.available_weight_kg ? 'error' : 'info'}
-              visible={packageWeight.length > 0}
-            >
-              {weight > trip.available_weight_kg
-                ? `Exceeds available capacity (${trip.available_weight_kg} kg)`
-                : `Available: ${trip.available_weight_kg} kg`}
-            </HelperText>
+          {/* Package Description */}
+          <TextInput
+            label="Package Description *"
+            value={packageDescription}
+            onChangeText={setPackageDescription}
+            mode="outlined"
+            multiline
+            numberOfLines={4}
+            left={<TextInput.Icon icon="package-variant" color={colors.textSecondary} />}
+            style={[styles.input, styles.multilineInput]}
+            outlineColor={colors.border}
+            activeOutlineColor={colors.primary}
+            placeholder="e.g., Books, clothes, electronics (no prohibited items)"
+            error={packageDescription.trim().length > 0 && packageDescription.trim().length < 10}
+          />
+          <HelperText
+            type={
+              packageDescription.trim().length > 0 && packageDescription.trim().length < 10
+                ? 'error'
+                : 'info'
+            }
+            visible={true}
+            style={styles.helperText}
+          >
+            {packageDescription.trim().length < 10
+              ? `Minimum 10 characters (${packageDescription.trim().length}/10)`
+              : 'Be specific about contents for smooth handover'}
+          </HelperText>
 
-            {/* Package Description */}
-            <TextInput
-              label="Package Description *"
-              value={packageDescription}
-              onChangeText={setPackageDescription}
-              mode="outlined"
-              multiline
-              numberOfLines={4}
-              left={<TextInput.Icon icon="package-variant" />}
-              style={styles.input}
-              placeholder="e.g., Books, clothes, electronics (no prohibited items)"
-              error={packageDescription.trim().length > 0 && packageDescription.trim().length < 10}
-            />
-            <HelperText
-              type={
-                packageDescription.trim().length > 0 && packageDescription.trim().length < 10
-                  ? 'error'
-                  : 'info'
-              }
-              visible={true}
-            >
-              {packageDescription.trim().length < 10
-                ? `Minimum 10 characters (${packageDescription.trim().length}/10)`
-                : 'Be specific about contents'}
-            </HelperText>
+          {/* Package Value */}
+          <TextInput
+            label="Package Value (₹) — Optional"
+            value={packageValue}
+            onChangeText={setPackageValue}
+            keyboardType="decimal-pad"
+            mode="outlined"
+            left={<TextInput.Icon icon="currency-inr" color={colors.textSecondary} />}
+            style={styles.input}
+            outlineColor={colors.border}
+            activeOutlineColor={colors.primary}
+            placeholder="Approximate value of contents"
+          />
+          <HelperText type="info" visible={true} style={styles.helperText}>
+            Helps traveler understand insurance needs
+          </HelperText>
 
-            {/* Package Value */}
-            <TextInput
-              label="Package Value (₹) (Optional)"
-              value={packageValue}
-              onChangeText={setPackageValue}
-              keyboardType="decimal-pad"
-              mode="outlined"
-              left={<TextInput.Icon icon="currency-inr" />}
-              style={styles.input}
-              placeholder="Approximate value of contents"
-            />
-            <HelperText type="info" visible={true}>
-              Helps traveler understand insurance needs
-            </HelperText>
-
-            {/* Additional Notes */}
-            <TextInput
-              label="Additional Notes (Optional)"
-              value={senderNotes}
-              onChangeText={setSenderNotes}
-              mode="outlined"
-              multiline
-              numberOfLines={3}
-              left={<TextInput.Icon icon="message-text" />}
-              style={styles.input}
-              placeholder="Special instructions, delivery preferences, etc."
-            />
-          </Card.Content>
-        </Card>
+          {/* Additional Notes */}
+          <TextInput
+            label="Message to Traveler — Optional"
+            value={senderNotes}
+            onChangeText={setSenderNotes}
+            mode="outlined"
+            multiline
+            numberOfLines={3}
+            left={<TextInput.Icon icon="message-text-outline" color={colors.textSecondary} />}
+            style={[styles.input, styles.multilineInput]}
+            outlineColor={colors.border}
+            activeOutlineColor={colors.primary}
+            placeholder="Special instructions, delivery preferences, etc."
+          />
+        </View>
 
         {/* Estimated Cost */}
         {weight > 0 && weight <= trip.available_weight_kg && (
-          <Card style={styles.costCard}>
-            <Card.Content>
-              <View style={styles.costRow}>
-                <Text variant="titleMedium" style={styles.costLabel}>
-                  Estimated Delivery Cost:
+          <View style={styles.costBox}>
+            <View style={styles.costRow}>
+              <View>
+                <Text variant="labelMedium" style={styles.costLabel}>
+                  Estimated Delivery Cost
                 </Text>
-                <Text variant="headlineSmall" style={styles.costValue}>
-                  ₹{estimatedCost}
+                <Text variant="bodySmall" style={styles.costNote}>
+                  {packageWeight} kg × ₹{trip.price_per_kg}/kg
                 </Text>
               </View>
-              <Text variant="bodySmall" style={styles.costNote}>
-                {packageWeight} kg × ₹{trip.price_per_kg}/kg
+              <Text variant="headlineSmall" style={styles.costValue}>
+                ₹{estimatedCost}
               </Text>
-              <Text variant="bodySmall" style={styles.costDisclaimer}>
-                Final price negotiated with traveler after match
-              </Text>
-            </Card.Content>
-          </Card>
+            </View>
+            <Text variant="bodySmall" style={styles.costDisclaimer}>
+              Final price is negotiated with the traveler after matching.
+            </Text>
+          </View>
         )}
 
-        {/* Important Info */}
-        <Card style={styles.infoCard}>
-          <Card.Content>
-            <Text variant="titleSmall" style={styles.infoTitle}>
-              Next Steps:
+        {/* Info / Terms Box */}
+        <View style={styles.infoBox}>
+          <View style={styles.infoBoxHeader}>
+            <MaterialCommunityIcons name="information-outline" size={18} color={colors.primary} />
+            <Text variant="labelMedium" style={styles.infoBoxTitle}>
+              How it works
             </Text>
-            <View style={styles.infoItem}>
-              <MaterialCommunityIcons name="numeric-1-circle" size={20} color="#0066cc" />
-              <Text variant="bodySmall" style={styles.infoText}>
-                Request sent to traveler for review
-              </Text>
+          </View>
+          <View style={styles.infoItem}>
+            <View style={styles.infoStep}>
+              <Text style={styles.infoStepNumber}>1</Text>
             </View>
-            <View style={styles.infoItem}>
-              <MaterialCommunityIcons name="numeric-2-circle" size={20} color="#0066cc" />
-              <Text variant="bodySmall" style={styles.infoText}>
-                Unlock contact (₹99 credit) after confirmation
-              </Text>
+            <Text variant="bodySmall" style={styles.infoText}>
+              Your request is sent to the traveler for review
+            </Text>
+          </View>
+          <View style={styles.infoItem}>
+            <View style={styles.infoStep}>
+              <Text style={styles.infoStepNumber}>2</Text>
             </View>
-            <View style={styles.infoItem}>
-              <MaterialCommunityIcons name="numeric-3-circle" size={20} color="#0066cc" />
-              <Text variant="bodySmall" style={styles.infoText}>
-                Coordinate handover and delivery details
-              </Text>
+            <Text variant="bodySmall" style={styles.infoText}>
+              Unlock contact (₹99 credit) once the traveler agrees
+            </Text>
+          </View>
+          <View style={styles.infoItem}>
+            <View style={styles.infoStep}>
+              <Text style={styles.infoStepNumber}>3</Text>
             </View>
-          </Card.Content>
-        </Card>
+            <Text variant="bodySmall" style={styles.infoText}>
+              Coordinate handover and delivery details directly
+            </Text>
+          </View>
+        </View>
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
-      {/* Fixed Bottom Button */}
+      {/* Fixed Bottom Bar */}
       <Surface style={styles.bottomBar} elevation={4}>
         <Button
           mode="contained"
@@ -263,8 +319,9 @@ export default function RequestToCarryScreen() {
           icon="send"
           contentStyle={styles.buttonContent}
           style={styles.submitButton}
+          buttonColor={colors.primary}
         >
-          Submit Request
+          Send Request
         </Button>
       </Surface>
     </View>
@@ -274,106 +331,210 @@ export default function RequestToCarryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
+  // ─── Header ────────────────────────────────────────────────────────────────
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.sm,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  backButton: {
+    marginLeft: 0,
+  },
+  backButtonContent: {
+    flexDirection: 'row-reverse',
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  headerSpacer: {
+    width: 48,
+  },
+  // ─── Scroll ────────────────────────────────────────────────────────────────
   scrollView: {
     flex: 1,
   },
-  tripSummary: {
-    padding: 16,
-    backgroundColor: '#ffffff',
-    marginBottom: 8,
+  // ─── Trip Card ─────────────────────────────────────────────────────────────
+  tripCard: {
+    backgroundColor: colors.surface,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+  },
+  tripCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  tripCardLabel: {
+    color: colors.primary,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   routeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  cityBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    flex: 1,
   },
   cityText: {
-    fontWeight: 'bold',
-    color: '#333333',
+    fontWeight: '700',
+    color: colors.textPrimary,
   },
-  travelerText: {
-    color: '#666666',
-    marginBottom: 4,
+  tripMeta: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
-  dateText: {
-    color: '#666666',
+  tripMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
-  card: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#ffffff',
+  tripMetaText: {
+    color: colors.textSecondary,
+  },
+  // ─── Section ───────────────────────────────────────────────────────────────
+  section: {
+    backgroundColor: colors.surface,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
   },
   sectionTitle: {
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: spacing.md,
   },
   input: {
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.surface,
+    marginBottom: spacing.xs,
   },
-  costCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#E3F2FD',
+  multilineInput: {
+    minHeight: 80,
+  },
+  helperText: {
+    marginBottom: spacing.xs,
+  },
+  // ─── Cost Box ──────────────────────────────────────────────────────────────
+  costBox: {
+    backgroundColor: colors.primarySubtle,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    padding: spacing.md,
   },
   costRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    marginBottom: spacing.xs,
   },
   costLabel: {
-    color: '#333333',
-  },
-  costValue: {
-    fontWeight: 'bold',
-    color: '#0066cc',
+    color: colors.textPrimary,
+    fontWeight: '600',
+    marginBottom: spacing.xs,
   },
   costNote: {
-    color: '#666666',
-    marginBottom: 4,
+    color: colors.textSecondary,
+  },
+  costValue: {
+    fontWeight: '700',
+    color: colors.primary,
   },
   costDisclaimer: {
-    color: '#999999',
+    color: colors.textSecondary,
     fontStyle: 'italic',
     fontSize: 11,
+    marginTop: spacing.xs,
   },
-  infoCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#ffffff',
+  // ─── Info Box ──────────────────────────────────────────────────────────────
+  infoBox: {
+    backgroundColor: colors.primarySubtle,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.md,
+    borderRadius: radius.lg,
+    padding: spacing.md,
   },
-  infoTitle: {
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 12,
+  infoBoxHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  infoBoxTitle: {
+    color: colors.primary,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   infoItem: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  infoStep: {
+    width: 20,
+    height: 20,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
     alignItems: 'center',
-    marginBottom: 10,
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  infoStepNumber: {
+    color: colors.surface,
+    fontSize: 11,
+    fontWeight: '700',
   },
   infoText: {
     flex: 1,
-    marginLeft: 12,
-    color: '#666666',
+    color: colors.textPrimary,
+    lineHeight: 20,
   },
+  // ─── Bottom ────────────────────────────────────────────────────────────────
   bottomSpacing: {
     height: 100,
   },
   bottomBar: {
-    backgroundColor: '#ffffff',
-    padding: 16,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: colors.border,
   },
   submitButton: {
-    borderRadius: 8,
+    borderRadius: radius.md,
   },
   buttonContent: {
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
   },
 });
