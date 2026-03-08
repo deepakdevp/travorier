@@ -1,11 +1,11 @@
 /**
  * Login Screen - Google OAuth Authentication
  */
-import { View, StyleSheet, Alert, Linking } from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
 import { Button, Text, ActivityIndicator } from 'react-native-paper';
 import { useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import { LinearGradient } from 'expo-linear-gradient';
+import { colors, spacing, radius } from '@/lib/theme';
 
 export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
@@ -49,160 +49,211 @@ export default function LoginScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={['#0066cc', '#0052a3', '#003d7a']}
-      style={styles.gradient}
-    >
-      <View style={styles.container}>
-        {/* Logo Section */}
-        <View style={styles.logoSection}>
-          <Text variant="displayLarge" style={styles.logo}>
-            ✈️
-          </Text>
-          <Text variant="headlineLarge" style={styles.brandName}>
-            Travorier
-          </Text>
-          <Text variant="titleMedium" style={styles.tagline}>
-            Connect Travelers with Package Senders
-          </Text>
+    <View style={styles.screen}>
+      {/* Hero Section */}
+      <View style={styles.hero}>
+        {/* Logo mark */}
+        <View style={styles.logoMark}>
+          <Text style={styles.logoIcon}>✈</Text>
         </View>
 
-        {/* Auth Section */}
-        <View style={styles.authSection}>
-          <Button
-            mode="contained"
-            onPress={handleGoogleSignIn}
-            disabled={loading}
-            icon="google"
-            contentStyle={styles.buttonContent}
-            style={styles.googleButton}
-            labelStyle={styles.buttonLabel}
-          >
-            {loading ? 'Signing in...' : 'Sign in with Google'}
-          </Button>
+        <Text style={styles.brandName}>Travorier</Text>
+        <Text style={styles.tagline}>Connect Travelers with{'\n'}Package Senders</Text>
 
-          {loading && (
-            <ActivityIndicator
-              animating={true}
-              color="#ffffff"
-              size="small"
-              style={styles.loader}
-            />
-          )}
-
-          <Text variant="bodySmall" style={styles.disclaimer}>
-            By continuing, you agree to our
-          </Text>
-          <View style={styles.linksRow}>
-            <Text
-              variant="bodySmall"
-              style={styles.link}
-              onPress={handleTermsPress}
-            >
-              Terms of Service
-            </Text>
-            <Text variant="bodySmall" style={styles.linkSeparator}>
-              {' • '}
-            </Text>
-            <Text
-              variant="bodySmall"
-              style={styles.link}
-              onPress={handlePrivacyPress}
-            >
-              Privacy Policy
-            </Text>
+        {/* Decorative pill badges */}
+        <View style={styles.badgesRow}>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>Trusted</Text>
+          </View>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>Secure</Text>
+          </View>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>Global</Text>
           </View>
         </View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text variant="bodySmall" style={styles.footerText}>
-            Crowdsourced Logistics Platform
-          </Text>
-          <Text variant="bodySmall" style={styles.footerText}>
-            Version 1.0.0
-          </Text>
-        </View>
       </View>
-    </LinearGradient>
+
+      {/* Auth Card */}
+      <View style={styles.card}>
+        <Text style={styles.cardHeading}>Welcome</Text>
+        <Text style={styles.cardSubheading}>Sign in to continue</Text>
+
+        <Button
+          mode="outlined"
+          onPress={handleGoogleSignIn}
+          disabled={loading}
+          style={styles.googleButton}
+          contentStyle={styles.googleButtonContent}
+          labelStyle={styles.googleButtonLabel}
+        >
+          {loading ? 'Signing in...' : 'G   Continue with Google'}
+        </Button>
+
+        {loading && (
+          <ActivityIndicator
+            animating={true}
+            color={colors.primary}
+            size="small"
+            style={styles.loader}
+          />
+        )}
+
+        {/* Terms row */}
+        <Text style={styles.disclaimer}>
+          By continuing, you agree to our{' '}
+          <Text style={styles.link} onPress={handleTermsPress}>
+            Terms of Service
+          </Text>
+          {' and '}
+          <Text style={styles.link} onPress={handlePrivacyPress}>
+            Privacy Policy
+          </Text>
+        </Text>
+      </View>
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>
+          Crowdsourced delivery, powered by travellers worldwide
+        </Text>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: {
+  screen: {
     flex: 1,
-  },
-  container: {
-    flex: 1,
+    backgroundColor: colors.background,
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 60,
   },
-  logoSection: {
+
+  // ── Hero ──────────────────────────────────────────────────────────────────
+  hero: {
+    flex: 1,
     alignItems: 'center',
-    marginTop: 60,
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.xxl,
+    borderBottomLeftRadius: radius.xl,
+    borderBottomRightRadius: radius.xl,
   },
-  logo: {
-    fontSize: 80,
-    marginBottom: 16,
+  logoMark: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+    shadowColor: colors.textPrimary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  logoIcon: {
+    fontSize: 32,
+    color: colors.primary,
   },
   brandName: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
+    fontSize: 36,
+    fontWeight: '700',
+    color: colors.surface,
+    letterSpacing: -0.5,
+    marginBottom: spacing.sm,
   },
   tagline: {
-    color: '#e0e0e0',
-    textAlign: 'center',
-    paddingHorizontal: 20,
-  },
-  authSection: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  googleButton: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    elevation: 4,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  buttonContent: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  buttonLabel: {
-    color: '#0066cc',
     fontSize: 16,
+    color: colors.primarySubtle,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: spacing.lg,
+  },
+  badgesRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  badge: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  badgeText: {
+    color: colors.surface,
+    fontSize: 12,
     fontWeight: '600',
   },
-  loader: {
-    marginTop: 16,
+
+  // ── Auth Card ─────────────────────────────────────────────────────────────
+  card: {
+    margin: spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    shadowColor: colors.textPrimary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
   },
-  disclaimer: {
-    color: '#e0e0e0',
-    marginTop: 32,
-    textAlign: 'center',
+  cardHeading: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
   },
-  linksRow: {
+  cardSubheading: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
+  },
+  googleButton: {
+    borderColor: colors.border,
+    borderWidth: 1.5,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+  },
+  googleButtonContent: {
+    paddingVertical: spacing.sm,
     flexDirection: 'row',
-    marginTop: 4,
-  },
-  link: {
-    color: '#ffffff',
-    textDecorationLine: 'underline',
-  },
-  linkSeparator: {
-    color: '#e0e0e0',
-  },
-  footer: {
     alignItems: 'center',
   },
+  googleButtonLabel: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: 0.1,
+  },
+  loader: {
+    marginTop: spacing.md,
+  },
+  disclaimer: {
+    marginTop: spacing.md,
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  link: {
+    color: colors.primary,
+    textDecorationLine: 'underline',
+    fontWeight: '500',
+  },
+
+  // ── Footer ────────────────────────────────────────────────────────────────
+  footer: {
+    alignItems: 'center',
+    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.xl,
+  },
   footerText: {
-    color: '#b0b0b0',
-    marginTop: 4,
+    fontSize: 12,
+    color: colors.textDisabled,
+    textAlign: 'center',
   },
 });
