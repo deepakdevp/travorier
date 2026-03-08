@@ -1,444 +1,302 @@
 /**
  * Match Confirmation Screen
- * Success screen after submitting a request to carry
+ * "Request Sent Successfully" — matches Stitch design:
+ * projects/7580322135798196968/screens/77a90f99ad9b4730b2c5766003088b39
  */
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Button, Card, Divider } from 'react-native-paper';
+import React from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTripsStore } from '@/stores/tripsStore';
 import { colors, spacing, radius } from '@/lib/theme';
 
+const STEPS = [
+  {
+    title: 'Traveler Accepts Request',
+    desc: 'A verified traveler reviews and accepts your delivery offer.',
+    active: true,
+  },
+  {
+    title: 'Secure Payment',
+    desc: 'Funds are held in escrow until delivery is confirmed.',
+    active: false,
+  },
+  {
+    title: 'Handover & Transit',
+    desc: 'Meet the traveler to hand over the package.',
+    active: false,
+  },
+  {
+    title: 'Delivery & Release',
+    desc: 'Recipient confirms receipt and funds are released.',
+    active: false,
+  },
+];
+
 export default function MatchConfirmationScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { selectedTrip } = useTripsStore();
 
-  const handleUnlockContact = () => {
-    // In production, this would navigate to payment/credit flow
-    // For now, just show alert
-    alert('Payment/credit feature coming in next milestone');
+  const handleBrowseMore = () => {
+    router.replace('/(tabs)/trips');
   };
 
   const handleViewMatches = () => {
-    router.replace('/(tabs)/requests');
-  };
-
-  const handleBrowseMore = () => {
     router.replace('/(tabs)');
   };
 
-  const steps = [
-    {
-      icon: 'clock-outline' as const,
-      title: 'Traveler Reviews Request',
-      description: 'The traveler will review your request, typically within 24 hours',
-    },
-    {
-      icon: 'bell-ring-outline' as const,
-      title: 'Get Notified',
-      description: "You'll receive an instant notification when the traveler accepts",
-    },
-    {
-      icon: 'shield-check-outline' as const,
-      title: 'Confirm & Secure Payment',
-      description: 'Confirm details and secure your payment in escrow',
-    },
-    {
-      icon: 'handshake-outline' as const,
-      title: 'Coordinate Handover',
-      description: 'Meet at an agreed public location for the package handover',
-    },
-  ];
-
   return (
     <ScrollView
-      style={styles.scrollContainer}
-      contentContainerStyle={styles.container}
+      style={styles.container}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.xl }]}
       showsVerticalScrollIndicator={false}
     >
-      {/* Success Hero */}
-      <View style={styles.heroSection}>
-        <View style={styles.successCircle}>
-          <MaterialCommunityIcons name="check" size={56} color={colors.surface} />
+      {/* Success icon — double ring */}
+      <View style={styles.iconWrap}>
+        <View style={styles.iconRingOuter}>
+          <View style={styles.iconRingInner}>
+            <MaterialCommunityIcons name="check" size={40} color="#ffffff" />
+          </View>
         </View>
-        <Text variant="headlineMedium" style={styles.title}>
-          Request Sent!
-        </Text>
-        <Text variant="bodyLarge" style={styles.subtitle}>
-          Your package delivery request has been sent to the traveler
-        </Text>
       </View>
 
-      {/* Trip Details Card */}
-      {selectedTrip && (
-        <Card style={styles.tripCard} elevation={0}>
-          <Card.Content style={styles.tripCardContent}>
-            <Text variant="labelMedium" style={styles.cardLabel}>
-              LOGISTICS MATCH
-            </Text>
+      {/* Title + subtitle */}
+      <Text style={styles.title}>Request Sent{'\n'}Successfully!</Text>
+      <Text style={styles.subtitle}>
+        Your package request has been broadcasted to travelers heading your way.
+      </Text>
 
-            {/* Route */}
-            <View style={styles.routeRow}>
-              <View style={styles.cityBlock}>
-                <Text variant="titleLarge" style={styles.cityText}>
-                  {selectedTrip.origin_city}
+      {/* What Happens Next card */}
+      <View style={styles.stepsCard}>
+        <Text style={styles.stepsHeader}>WHAT HAPPENS NEXT?</Text>
+
+        <View style={styles.stepsContainer}>
+          {/* Vertical connector line */}
+          <View style={styles.stepLine} />
+
+          {STEPS.map((step, index) => (
+            <View key={index} style={styles.stepRow}>
+              {/* Circle */}
+              <View
+                style={[
+                  styles.stepCircle,
+                  step.active ? styles.stepCircleActive : styles.stepCircleInactive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.stepNumber,
+                    step.active ? styles.stepNumberActive : styles.stepNumberInactive,
+                  ]}
+                >
+                  {index + 1}
                 </Text>
               </View>
-              <MaterialCommunityIcons
-                name="airplane"
-                size={22}
-                color={colors.primary}
-                style={styles.airplaneIcon}
-              />
-              <View style={styles.cityBlock}>
-                <Text variant="titleLarge" style={styles.cityText}>
-                  {selectedTrip.destination_city}
-                </Text>
-              </View>
-            </View>
 
-            <Divider style={styles.divider} />
-
-            {/* Traveler */}
-            <View style={styles.detailRow}>
-              <MaterialCommunityIcons
-                name="account-circle-outline"
-                size={18}
-                color={colors.textSecondary}
-              />
-              <Text variant="bodyMedium" style={styles.detailText}>
-                {selectedTrip.traveler.full_name}
-              </Text>
-              {selectedTrip.pnr_verified && (
-                <View style={styles.verifiedBadge}>
-                  <MaterialCommunityIcons name="check-decagram" size={14} color={colors.success} />
-                  <Text variant="labelSmall" style={styles.verifiedText}>
-                    Verified
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            {/* Date */}
-            <View style={styles.detailRow}>
-              <MaterialCommunityIcons
-                name="calendar-outline"
-                size={18}
-                color={colors.textSecondary}
-              />
-              <Text variant="bodyMedium" style={styles.detailText}>
-                {new Date(selectedTrip.departure_date).toLocaleDateString('en-IN', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                })}
-              </Text>
-            </View>
-
-            {/* Weight & Price */}
-            <View style={styles.detailRow}>
-              <MaterialCommunityIcons
-                name="weight-kilogram"
-                size={18}
-                color={colors.textSecondary}
-              />
-              <Text variant="bodyMedium" style={styles.detailText}>
-                Up to {selectedTrip.available_weight_kg} kg · ₹{selectedTrip.price_per_kg}/kg
-              </Text>
-            </View>
-          </Card.Content>
-        </Card>
-      )}
-
-      {/* What Happens Next */}
-      <Card style={styles.stepsCard} elevation={0}>
-        <Card.Content style={styles.stepsCardContent}>
-          <Text variant="titleMedium" style={styles.stepsTitle}>
-            What Happens Next?
-          </Text>
-
-          {steps.map((step, index) => (
-            <View key={index} style={styles.stepItem}>
-              <View style={styles.stepLeft}>
-                <View style={styles.stepNumberBadge}>
-                  <Text variant="labelSmall" style={styles.stepNumber}>
-                    {index + 1}
-                  </Text>
-                </View>
-                {index < steps.length - 1 && <View style={styles.stepConnector} />}
-              </View>
+              {/* Content */}
               <View style={styles.stepBody}>
-                <View style={styles.stepIconRow}>
-                  <View style={styles.stepIconContainer}>
-                    <MaterialCommunityIcons
-                      name={step.icon}
-                      size={20}
-                      color={colors.primary}
-                    />
-                  </View>
-                  <Text variant="titleSmall" style={styles.stepTitle}>
-                    {step.title}
-                  </Text>
-                </View>
-                <Text variant="bodySmall" style={styles.stepText}>
-                  {step.description}
-                </Text>
+                <Text style={styles.stepTitle}>{step.title}</Text>
+                <Text style={styles.stepDesc}>{step.desc}</Text>
               </View>
             </View>
           ))}
-        </Card.Content>
-      </Card>
-
-      {/* Action Buttons */}
-      <View style={styles.actionsContainer}>
-        <Button
-          mode="contained"
-          onPress={handleViewMatches}
-          style={styles.primaryButton}
-          contentStyle={styles.buttonContent}
-          labelStyle={styles.primaryButtonLabel}
-        >
-          View My Requests
-        </Button>
-
-        <Button
-          mode="outlined"
-          onPress={handleBrowseMore}
-          style={styles.secondaryButton}
-          contentStyle={styles.buttonContent}
-          labelStyle={styles.secondaryButtonLabel}
-        >
-          Back to Home
-        </Button>
+        </View>
       </View>
 
-      {/* Info Note */}
-      <View style={styles.infoNote}>
-        <MaterialCommunityIcons name="information-outline" size={15} color={colors.textSecondary} />
-        <Text variant="bodySmall" style={styles.infoText}>
-          Track all your matches and messages in the Requests tab
-        </Text>
-      </View>
+      {/* Action buttons */}
+      <TouchableOpacity
+        style={styles.primaryButton}
+        onPress={handleBrowseMore}
+        activeOpacity={0.85}
+      >
+        <MaterialCommunityIcons name="compass-outline" size={20} color="#ffffff" />
+        <Text style={styles.primaryButtonText}>Browse More Trips</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.secondaryButton}
+        onPress={handleViewMatches}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.secondaryButtonText}>Go to Homepage</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   container: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.xl,
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
+  content: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxl,
+    alignItems: 'center',
   },
 
-  // Hero
-  heroSection: {
+  // ── Success icon ──────────────────────────────────────────────────────────
+  iconWrap: {
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
-  successCircle: {
-    width: 100,
-    height: 100,
+  iconRingOuter: {
+    width: 120,
+    height: 120,
+    borderRadius: radius.full,
+    backgroundColor: '#d1fae5',   // green-100
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconRingInner: {
+    width: 80,
+    height: 80,
     borderRadius: radius.full,
     backgroundColor: colors.success,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.lg,
-    shadowColor: colors.success,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
   },
+
+  // ── Heading ───────────────────────────────────────────────────────────────
   title: {
+    fontSize: 28,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: '#111827',
     textAlign: 'center',
-    marginBottom: spacing.sm,
+    lineHeight: 34,
+    marginBottom: spacing.md,
   },
   subtitle: {
-    color: colors.textSecondary,
+    fontSize: 15,
+    color: '#6b7280',
     textAlign: 'center',
-    paddingHorizontal: spacing.lg,
     lineHeight: 22,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.xl,
   },
 
-  // Trip Card
-  tripCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.md,
-  },
-  tripCardContent: {
-    paddingVertical: spacing.md,
-  },
-  cardLabel: {
-    color: colors.textSecondary,
-    letterSpacing: 0.8,
-    marginBottom: spacing.md,
-  },
-  routeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  cityBlock: {
-    flex: 1,
-  },
-  cityText: {
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  airplaneIcon: {
-    marginHorizontal: spacing.sm,
-    transform: [{ rotate: '45deg' }],
-  },
-  divider: {
-    backgroundColor: colors.border,
-    marginBottom: spacing.md,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  detailText: {
-    color: colors.textSecondary,
-    flex: 1,
-  },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: colors.successSubtle,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: radius.sm,
-  },
-  verifiedText: {
-    color: colors.success,
-    fontWeight: '600',
-  },
-
-  // Steps Card
+  // ── Steps card ────────────────────────────────────────────────────────────
   stepsCard: {
-    backgroundColor: colors.surface,
+    width: '100%',
+    backgroundColor: '#ffffff',
     borderRadius: radius.xl,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#f3f4f6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  stepsHeader: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#6b7280',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: spacing.md,
+  },
+  stepsContainer: {
+    position: 'relative',
+  },
+  stepLine: {
+    position: 'absolute',
+    left: 19,
+    top: 40,
+    bottom: 40,
+    width: 2,
+    backgroundColor: '#e5e7eb',
+    zIndex: 0,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
     marginBottom: spacing.lg,
   },
-  stepsCardContent: {
-    paddingVertical: spacing.md,
-  },
-  stepsTitle: {
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  stepItem: {
-    flexDirection: 'row',
-    marginBottom: spacing.md,
-  },
-  stepLeft: {
-    alignItems: 'center',
-    width: 28,
-    marginRight: spacing.md,
-  },
-  stepNumberBadge: {
-    width: 24,
-    height: 24,
+  stepCircle: {
+    width: 40,
+    height: 40,
     borderRadius: radius.full,
-    backgroundColor: colors.primarySubtle,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 1,
+    flexShrink: 0,
+  },
+  stepCircleActive: {
+    backgroundColor: colors.success,
+  },
+  stepCircleInactive: {
+    backgroundColor: '#ffffff',
+    borderWidth: 2,
+    borderColor: '#d1d5db',
   },
   stepNumber: {
-    color: colors.primary,
+    fontSize: 15,
     fontWeight: '700',
   },
-  stepConnector: {
-    flex: 1,
-    width: 2,
-    backgroundColor: colors.border,
-    marginTop: spacing.xs,
-    minHeight: spacing.lg,
+  stepNumberActive: {
+    color: '#ffffff',
+  },
+  stepNumberInactive: {
+    color: '#9ca3af',
   },
   stepBody: {
     flex: 1,
-    paddingBottom: spacing.xs,
-  },
-  stepIconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  stepIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.md,
-    backgroundColor: colors.primarySubtle,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingTop: 6,
   },
   stepTitle: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 4,
   },
-  stepText: {
-    color: colors.textSecondary,
+  stepDesc: {
+    fontSize: 13,
+    color: '#6b7280',
     lineHeight: 18,
-    paddingLeft: 44,
   },
 
-  // Buttons
-  actionsContainer: {
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
+  // ── Buttons ───────────────────────────────────────────────────────────────
   primaryButton: {
-    borderRadius: radius.lg,
-    backgroundColor: colors.primary,
-  },
-  secondaryButton: {
-    borderRadius: radius.lg,
-    borderColor: colors.border,
-  },
-  buttonContent: {
-    paddingVertical: spacing.sm,
-  },
-  primaryButtonLabel: {
-    color: colors.surface,
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  secondaryButtonLabel: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-    fontSize: 15,
-  },
-
-  // Info Note
-  infoNote: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+    backgroundColor: colors.success,
+    borderRadius: radius.xl,
+    paddingVertical: spacing.md + 2,
+    marginBottom: spacing.sm,
+    shadowColor: colors.success,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  infoText: {
-    color: colors.textSecondary,
-    textAlign: 'center',
-    flex: 1,
-    lineHeight: 18,
+  primaryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  secondaryButton: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: radius.xl,
+    paddingVertical: spacing.md + 2,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  secondaryButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#111827',
   },
 });

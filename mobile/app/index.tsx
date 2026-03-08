@@ -1,15 +1,38 @@
 /**
  * Main landing/splash screen
+ *
+ * Design based on Stitch screen:
+ * projects/7580322135798196968/screens/3437b74128754a49a74b5b1229ead777
  */
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Animated } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import { colors, spacing } from '@/lib/theme';
+import { colors, spacing, radius } from '@/lib/theme';
 
 export default function Index() {
   const router = useRouter();
   const { session, loading, initialized } = useAuthStore();
+
+  // Fade-in-up animation (0.8s ease-out, 20px vertical translation)
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const translateAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   useEffect(() => {
     if (!initialized || loading) return;
@@ -26,25 +49,38 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
+      <Animated.View
+        style={[
+          styles.content,
+          { opacity: fadeAnim, transform: [{ translateY: translateAnim }] },
+        ]}
+      >
+        {/* Icon row: local_shipping + flight_takeoff */}
         <View style={styles.iconRow}>
+          {/* local_shipping icon (package box) */}
           <View style={styles.iconBadge}>
             <Text style={styles.iconText}>📦</Text>
           </View>
-          <View style={styles.iconDivider} />
+          {/* flight_takeoff icon (airplane) */}
           <View style={styles.iconBadge}>
             <Text style={styles.iconText}>✈️</Text>
           </View>
         </View>
 
+        {/* Brand name */}
         <Text style={styles.title}>Travorier</Text>
-        <Text style={styles.subtitle}>Crowdsourced Logistics</Text>
-      </View>
 
-      <View style={styles.loaderSection}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        {/* Tagline */}
+        <Text style={styles.subtitle}>Crowdsourced Logistics</Text>
+
+        {/* Loading indicator + status text */}
+        <ActivityIndicator
+          size="small"
+          color={colors.primary}
+          style={styles.loader}
+        />
         <Text style={styles.loadingText}>Initializing secure session...</Text>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -52,57 +88,48 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    paddingVertical: spacing.xxl,
-  },
-  content: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.background,
+  },
+  content: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
   },
   iconRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    gap: spacing.md,
     marginBottom: spacing.lg,
   },
   iconBadge: {
     width: 56,
     height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.primarySubtle,
-    justifyContent: 'center',
+    borderRadius: radius.lg,
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   iconText: {
-    fontSize: 24,
-  },
-  iconDivider: {
-    width: spacing.md,
-    height: 2,
-    backgroundColor: colors.border,
-    marginHorizontal: spacing.sm,
+    fontSize: 28,
   },
   title: {
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: '700',
     color: colors.primary,
+    marginBottom: spacing.sm,
     letterSpacing: -0.5,
-    marginBottom: spacing.xs,
   },
   subtitle: {
     fontSize: 16,
+    fontWeight: '400',
     color: colors.textSecondary,
-    letterSpacing: 0.2,
+    marginBottom: spacing.xxl,
   },
-  loaderSection: {
-    alignItems: 'center',
-    gap: spacing.sm,
+  loader: {
+    marginBottom: spacing.sm,
   },
   loadingText: {
     fontSize: 13,
-    color: colors.textDisabled,
-    marginTop: spacing.xs,
+    color: colors.textSecondary,
   },
 });

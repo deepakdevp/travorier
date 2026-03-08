@@ -1,6 +1,7 @@
 /**
  * Post Request Screen
- * Form for senders to post a package delivery request
+ * Revamped UI based on Stitch "Post New Package Request" design.
+ * Preserves all original form state and business logic unchanged.
  */
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import {
@@ -88,230 +89,224 @@ export default function PostRequestScreen() {
     );
   };
 
+  const descTrimmed = packageDescription.trim();
+  const descError = descTrimmed.length > 0 && descTrimmed.length < 10;
+
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-
-        {/* Route Details Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>ROUTE DETAILS</Text>
-
-          <View style={styles.card}>
-            <View style={styles.fieldRow}>
-              <MaterialCommunityIcons name="airplane-takeoff" size={20} color={colors.primary} style={styles.fieldIcon} />
-              <View style={styles.fieldInputs}>
-                <Text style={styles.fieldLabel}>Origin</Text>
-                <View style={styles.rowInputs}>
-                  <TextInput
-                    label="City *"
-                    value={originCity}
-                    onChangeText={setOriginCity}
-                    mode="outlined"
-                    outlineColor={colors.border}
-                    activeOutlineColor={colors.primary}
-                    style={[styles.input, styles.flex2]}
-                    contentStyle={styles.inputContent}
-                  />
-                  <TextInput
-                    label="Country *"
-                    value={originCountry}
-                    onChangeText={setOriginCountry}
-                    mode="outlined"
-                    outlineColor={colors.border}
-                    activeOutlineColor={colors.primary}
-                    style={[styles.input, styles.flex1]}
-                    contentStyle={styles.inputContent}
-                  />
-                </View>
-              </View>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ---------------------------------------------------------------- */}
+        {/* Route Section                                                     */}
+        {/* ---------------------------------------------------------------- */}
+        <View style={styles.sectionCard}>
+          {/* Section header */}
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionIconWrap}>
+              <MaterialCommunityIcons name="map-marker-path" size={16} color={colors.primary} />
             </View>
+            <Text style={styles.sectionLabel}>Route Details</Text>
+          </View>
 
-            <Divider style={styles.fieldDivider} />
-
-            <View style={styles.fieldRow}>
-              <MaterialCommunityIcons name="airplane-landing" size={20} color={colors.primary} style={styles.fieldIcon} />
-              <View style={styles.fieldInputs}>
-                <Text style={styles.fieldLabel}>Destination</Text>
-                <View style={styles.rowInputs}>
-                  <TextInput
-                    label="City *"
-                    value={destinationCity}
-                    onChangeText={setDestinationCity}
-                    mode="outlined"
-                    outlineColor={colors.border}
-                    activeOutlineColor={colors.primary}
-                    style={[styles.input, styles.flex2]}
-                    contentStyle={styles.inputContent}
-                  />
-                  <TextInput
-                    label="Country *"
-                    value={destinationCountry}
-                    onChangeText={setDestinationCountry}
-                    mode="outlined"
-                    outlineColor={colors.border}
-                    activeOutlineColor={colors.primary}
-                    style={[styles.input, styles.flex1]}
-                    contentStyle={styles.inputContent}
-                  />
-                </View>
-              </View>
+          {/* Origin row */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldGroupLabel}>From</Text>
+            <View style={styles.rowInputs}>
+              <TextInput
+                label="City *"
+                value={originCity}
+                onChangeText={setOriginCity}
+                mode="outlined"
+                style={[styles.input, styles.flex2]}
+                outlineStyle={styles.inputOutline}
+                contentStyle={styles.inputContent}
+                left={<TextInput.Icon icon="airplane-takeoff" color={colors.primary} />}
+              />
+              <TextInput
+                label="Country *"
+                value={originCountry}
+                onChangeText={setOriginCountry}
+                mode="outlined"
+                style={[styles.input, styles.flex1]}
+                outlineStyle={styles.inputOutline}
+                contentStyle={styles.inputContent}
+              />
             </View>
+          </View>
 
-            <Divider style={styles.fieldDivider} />
+          {/* Route arrow divider */}
+          <View style={styles.routeArrowRow}>
+            <View style={styles.routeArrowLine} />
+            <View style={styles.routeArrowCircle}>
+              <MaterialCommunityIcons name="arrow-down" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.routeArrowLine} />
+          </View>
 
-            <View style={styles.fieldRow}>
-              <MaterialCommunityIcons name="calendar-today" size={20} color={colors.primary} style={styles.fieldIcon} />
-              <View style={styles.fieldInputs}>
-                <Text style={styles.fieldLabel}>Needed By</Text>
-                <TextInput
-                  label="Date * (YYYY-MM-DD)"
-                  value={neededByDate}
-                  onChangeText={setNeededByDate}
-                  mode="outlined"
-                  outlineColor={colors.border}
-                  activeOutlineColor={colors.primary}
-                  style={styles.input}
-                  contentStyle={styles.inputContent}
-                  placeholder="e.g. 2026-03-20"
-                />
-              </View>
+          {/* Destination row */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldGroupLabel}>To</Text>
+            <View style={styles.rowInputs}>
+              <TextInput
+                label="City *"
+                value={destinationCity}
+                onChangeText={setDestinationCity}
+                mode="outlined"
+                style={[styles.input, styles.flex2]}
+                outlineStyle={styles.inputOutline}
+                contentStyle={styles.inputContent}
+                left={<TextInput.Icon icon="airplane-landing" color={colors.primary} />}
+              />
+              <TextInput
+                label="Country *"
+                value={destinationCountry}
+                onChangeText={setDestinationCountry}
+                mode="outlined"
+                style={[styles.input, styles.flex1]}
+                outlineStyle={styles.inputOutline}
+                contentStyle={styles.inputContent}
+              />
             </View>
           </View>
         </View>
 
-        {/* Package Details Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>PACKAGE DETAILS</Text>
-
-          <View style={styles.card}>
-            {/* Weight */}
-            <View style={styles.fieldRow}>
-              <MaterialCommunityIcons name="weight-kilogram" size={20} color={colors.primary} style={styles.fieldIcon} />
-              <View style={styles.fieldInputs}>
-                <Text style={styles.fieldLabel}>Weight (kg) *</Text>
-                <TextInput
-                  label="e.g. 2.5"
-                  value={packageWeight}
-                  onChangeText={setPackageWeight}
-                  keyboardType="decimal-pad"
-                  mode="outlined"
-                  outlineColor={colors.border}
-                  activeOutlineColor={colors.primary}
-                  style={styles.input}
-                  contentStyle={styles.inputContent}
-                />
-                <HelperText type="info" visible={weight > 0} style={styles.helperText}>
-                  {weight} kg requested
-                </HelperText>
-              </View>
+        {/* ---------------------------------------------------------------- */}
+        {/* Package Details Section                                           */}
+        {/* ---------------------------------------------------------------- */}
+        <View style={styles.sectionCard}>
+          {/* Section header */}
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionIconWrap}>
+              <MaterialCommunityIcons name="package-variant-closed" size={16} color={colors.primary} />
             </View>
-
-            <Divider style={styles.fieldDivider} />
-
-            {/* Description */}
-            <View style={styles.fieldRow}>
-              <MaterialCommunityIcons name="package-variant" size={20} color={colors.primary} style={styles.fieldIcon} />
-              <View style={styles.fieldInputs}>
-                <Text style={styles.fieldLabel}>Package Description *</Text>
-                <TextInput
-                  label="What's in the package?"
-                  value={packageDescription}
-                  onChangeText={setPackageDescription}
-                  mode="outlined"
-                  multiline
-                  numberOfLines={3}
-                  outlineColor={colors.border}
-                  activeOutlineColor={colors.primary}
-                  style={styles.input}
-                  contentStyle={styles.inputContent}
-                  placeholder="e.g. Books, clothes, electronics (no prohibited items)"
-                  error={packageDescription.trim().length > 0 && packageDescription.trim().length < 10}
-                />
-                <HelperText
-                  type={packageDescription.trim().length > 0 && packageDescription.trim().length < 10 ? 'error' : 'info'}
-                  visible={true}
-                  style={styles.helperText}
-                >
-                  {packageDescription.trim().length < 10
-                    ? `Minimum 10 characters (${packageDescription.trim().length}/10)`
-                    : 'Be specific — traveler needs to know what they are carrying'}
-                </HelperText>
-              </View>
-            </View>
-
-            <Divider style={styles.fieldDivider} />
-
-            {/* Estimated Value */}
-            <View style={styles.fieldRow}>
-              <MaterialCommunityIcons name="currency-inr" size={20} color={colors.textSecondary} style={styles.fieldIcon} />
-              <View style={styles.fieldInputs}>
-                <View style={styles.optionalLabelRow}>
-                  <Text style={styles.fieldLabel}>Estimated Value (₹)</Text>
-                  <Text style={styles.optionalBadge}>Optional</Text>
-                </View>
-                <TextInput
-                  label="e.g. 500"
-                  value={packageValue}
-                  onChangeText={setPackageValue}
-                  keyboardType="decimal-pad"
-                  mode="outlined"
-                  outlineColor={colors.border}
-                  activeOutlineColor={colors.primary}
-                  style={styles.input}
-                  contentStyle={styles.inputContent}
-                />
-                <HelperText type="info" visible={true} style={styles.helperText}>
-                  Helps traveler understand insurance needs
-                </HelperText>
-              </View>
-            </View>
-
-            <Divider style={styles.fieldDivider} />
-
-            {/* Special Instructions */}
-            <View style={styles.fieldRow}>
-              <MaterialCommunityIcons name="information-outline" size={20} color={colors.textSecondary} style={styles.fieldIcon} />
-              <View style={styles.fieldInputs}>
-                <View style={styles.optionalLabelRow}>
-                  <Text style={styles.fieldLabel}>Special Instructions</Text>
-                  <Text style={styles.optionalBadge}>Optional</Text>
-                </View>
-                <TextInput
-                  label="Handle with care, fragile, etc."
-                  value={specialInstructions}
-                  onChangeText={setSpecialInstructions}
-                  mode="outlined"
-                  multiline
-                  numberOfLines={3}
-                  outlineColor={colors.border}
-                  activeOutlineColor={colors.primary}
-                  style={styles.input}
-                  contentStyle={styles.inputContent}
-                />
-              </View>
-            </View>
+            <Text style={styles.sectionLabel}>Package Details</Text>
           </View>
+
+          {/* Needed by date */}
+          <TextInput
+            label="Needed by Date * (YYYY-MM-DD)"
+            value={neededByDate}
+            onChangeText={setNeededByDate}
+            mode="outlined"
+            left={<TextInput.Icon icon="calendar" color={colors.primary} />}
+            style={styles.input}
+            outlineStyle={styles.inputOutline}
+            contentStyle={styles.inputContent}
+            placeholder="e.g. 2026-03-20"
+          />
+
+          {/* Package weight */}
+          <TextInput
+            label="Package Weight (kg) *"
+            value={packageWeight}
+            onChangeText={setPackageWeight}
+            keyboardType="decimal-pad"
+            mode="outlined"
+            left={<TextInput.Icon icon="weight-kilogram" color={colors.primary} />}
+            style={styles.input}
+            outlineStyle={styles.inputOutline}
+            contentStyle={styles.inputContent}
+          />
+          <HelperText type="info" visible={weight > 0} style={styles.helperText}>
+            {weight} kg requested
+          </HelperText>
+
+          {/* Package description */}
+          <TextInput
+            label="Package Description *"
+            value={packageDescription}
+            onChangeText={setPackageDescription}
+            mode="outlined"
+            multiline
+            numberOfLines={4}
+            left={<TextInput.Icon icon="package-variant" color={colors.primary} />}
+            style={styles.input}
+            outlineStyle={styles.inputOutline}
+            contentStyle={styles.inputContent}
+            placeholder="e.g. Books, clothes, electronics (no prohibited items)"
+            error={descError}
+          />
+          <HelperText
+            type={descError ? 'error' : 'info'}
+            visible={true}
+            style={styles.helperText}
+          >
+            {descTrimmed.length < 10
+              ? `Minimum 10 characters (${descTrimmed.length}/10)`
+              : 'Be specific — traveler needs to know what they are carrying'}
+          </HelperText>
+
+          {/* Divider */}
+          <View style={styles.sectionDivider} />
+
+          {/* Optional fields label */}
+          <Text style={styles.optionalGroupLabel}>Optional Details</Text>
+
+          {/* Estimated value */}
+          <TextInput
+            label="Estimated Value (₹)"
+            value={packageValue}
+            onChangeText={setPackageValue}
+            keyboardType="decimal-pad"
+            mode="outlined"
+            left={<TextInput.Icon icon="currency-inr" color={colors.textSecondary} />}
+            style={styles.input}
+            outlineStyle={styles.inputOutline}
+            contentStyle={styles.inputContent}
+          />
+          <HelperText type="info" visible={true} style={styles.helperText}>
+            Helps traveler understand insurance needs
+          </HelperText>
+
+          {/* Special instructions */}
+          <TextInput
+            label="Special Instructions"
+            value={specialInstructions}
+            onChangeText={setSpecialInstructions}
+            mode="outlined"
+            multiline
+            numberOfLines={3}
+            left={<TextInput.Icon icon="message-text" color={colors.textSecondary} />}
+            style={styles.input}
+            outlineStyle={styles.inputOutline}
+            contentStyle={styles.inputContent}
+            placeholder="Handle with care, fragile, etc."
+          />
         </View>
 
-        {/* Info Banner */}
-        <View style={styles.infoBanner}>
+        {/* ---------------------------------------------------------------- */}
+        {/* Info Card                                                          */}
+        {/* ---------------------------------------------------------------- */}
+        <View style={styles.infoCard}>
           <View style={styles.infoItem}>
-            <MaterialCommunityIcons name="bell-ring-outline" size={18} color={colors.primary} />
+            <View style={[styles.infoIconCircle, { backgroundColor: colors.primaryLight }]}>
+              <MaterialCommunityIcons name="bell-ring-outline" size={15} color={colors.primary} />
+            </View>
             <Text style={styles.infoText}>
               Matching travelers will be notified about your request
             </Text>
           </View>
+
+          <View style={styles.infoDivider} />
+
           <View style={styles.infoItem}>
-            <MaterialCommunityIcons name="lock-open-outline" size={18} color={colors.primary} />
+            <View style={[styles.infoIconCircle, { backgroundColor: colors.successLight }]}>
+              <MaterialCommunityIcons name="lock-open-outline" size={15} color={colors.success} />
+            </View>
             <Text style={styles.infoText}>
-              Unlock traveler contact for ₹99 (1 credit) after match
+              Unlock traveler contact for{' '}
+              <Text style={styles.infoTextBold}>₹99 (1 credit)</Text> after match
             </Text>
           </View>
         </View>
-
-        <View style={styles.bottomSpacing} />
       </ScrollView>
 
+      {/* ------------------------------------------------------------------ */}
+      {/* Fixed Bottom CTA                                                    */}
+      {/* ------------------------------------------------------------------ */}
       <Surface style={styles.bottomBar} elevation={4}>
         <Button
           mode="contained"
@@ -319,10 +314,9 @@ export default function PostRequestScreen() {
           loading={loading}
           disabled={!isValid() || loading}
           icon="send"
-          buttonColor={colors.primary}
-          contentStyle={styles.buttonContent}
-          style={styles.submitButton}
-          labelStyle={styles.submitButtonLabel}
+          contentStyle={styles.ctaButtonContent}
+          labelStyle={styles.ctaButtonLabel}
+          style={styles.ctaButton}
         >
           Post Request
         </Button>
@@ -332,6 +326,7 @@ export default function PostRequestScreen() {
 }
 
 const styles = StyleSheet.create({
+  // ── Root
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -340,130 +335,185 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.xxl + spacing.xl,
   },
 
-  // Section wrapper
-  section: {
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.md,
-  },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-    textTransform: 'uppercase',
-  },
-
-  // Card surface
-  card: {
+  // ── Section cards
+  sectionCard: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    overflow: 'hidden',
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
 
-  // Field row inside card
-  fieldRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  fieldIcon: {
-    marginTop: spacing.sm + 2,
-    marginRight: spacing.md,
-  },
-  fieldInputs: {
-    flex: 1,
-  },
-  fieldLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  optionalLabelRow: {
+  // ── Section header row (icon + label)
+  sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: spacing.md,
     gap: spacing.sm,
   },
-  optionalBadge: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+  sectionIconWrap: {
+    width: 30,
+    height: 30,
     borderRadius: radius.full,
-    overflow: 'hidden',
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    letterSpacing: 0.1,
   },
 
-  // Inputs
+  // ── Field group (From / To labels)
+  fieldGroup: {
+    marginBottom: spacing.xs,
+  },
+  fieldGroupLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: spacing.xs,
+    marginLeft: spacing.xs,
+  },
+
+  // ── Row inputs (side-by-side city + country)
   rowInputs: {
     flexDirection: 'row',
     gap: spacing.sm,
   },
   flex1: { flex: 1 },
   flex2: { flex: 2 },
+
+  // ── Route arrow divider
+  routeArrowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.sm,
+    gap: spacing.sm,
+  },
+  routeArrowLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.divider,
+  },
+  routeArrowCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.full,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+
+  // ── TextInput shared styles
   input: {
     backgroundColor: colors.surface,
-    marginBottom: 0,
+    marginBottom: spacing.xs,
+  },
+  inputOutline: {
+    borderRadius: radius.md,
+    borderColor: colors.border,
   },
   inputContent: {
     fontSize: 14,
   },
+
+  // ── HelperText
   helperText: {
-    marginTop: 0,
-    paddingLeft: 0,
+    marginBottom: spacing.xs,
+    fontSize: 12,
   },
 
-  fieldDivider: {
-    backgroundColor: colors.border,
+  // ── Section divider (inside package card)
+  sectionDivider: {
+    height: 1,
+    backgroundColor: colors.divider,
+    marginVertical: spacing.md,
+  },
+  optionalGroupLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
   },
 
-  // Info banner
-  infoBanner: {
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.md,
-    backgroundColor: colors.primarySubtle,
+  // ── Info card
+  infoCard: {
+    backgroundColor: colors.primaryLight,
     borderRadius: radius.lg,
     padding: spacing.md,
-    gap: spacing.sm,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   infoItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.sm,
   },
+  infoIconCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    marginTop: 1,
+  },
   infoText: {
     flex: 1,
     fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  infoTextBold: {
+    fontWeight: '700',
     color: colors.primary,
-    lineHeight: 18,
+  },
+  infoDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: spacing.sm,
   },
 
-  // Bottom
-  bottomSpacing: { height: 100 },
+  // ── Bottom CTA bar
   bottomBar: {
     backgroundColor: colors.surface,
-    padding: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
-  submitButton: {
+  ctaButton: {
     borderRadius: radius.md,
+    backgroundColor: colors.primary,
   },
-  submitButtonLabel: {
+  ctaButtonContent: {
+    paddingVertical: spacing.sm,
+  },
+  ctaButtonLabel: {
     fontSize: 15,
     fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  buttonContent: {
-    paddingVertical: spacing.sm,
+    letterSpacing: 0.2,
   },
 });

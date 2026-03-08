@@ -1,273 +1,581 @@
 /**
- * Home Screen - Dashboard
- * Greeting header, search bar, and live trip feed
+ * Home Screen - Main Dashboard
+ *
+ * Design based on Stitch screen:
+ * projects/7580322135798196968/screens/user_dashboard
  */
-import { useEffect, useCallback } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { Text, Searchbar, Avatar, ActivityIndicator } from 'react-native-paper';
+import React from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { Text } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/stores/authStore';
 import { useTripsStore, type Trip } from '@/stores/tripsStore';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import TripCard from '@/components/TripCard';
 import { colors, spacing, radius } from '@/lib/theme';
-
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
-}
 
 export default function HomeScreen() {
   const { user, profile } = useAuthStore();
   const { filteredTrips, filters, loading, fetchTrips, updateFilters, setSelectedTrip } =
     useTripsStore();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
-  const displayName =
-    profile?.full_name ||
-    user?.user_metadata?.full_name ||
-    user?.email?.split('@')[0] ||
-    'Traveler';
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Traveler';
+  const avatarUrl = user?.user_metadata?.avatar_url;
+  const [avatarError, setAvatarError] = React.useState(false);
 
-  const firstName = displayName.split(' ')[0];
-
-  const avatarInitials = displayName
-    .split(' ')
-    .map((n: string) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-
-  useEffect(() => {
-    fetchTrips();
-  }, [fetchTrips]);
-
-  const handleTripPress = useCallback(
-    (trip: Trip) => {
-      setSelectedTrip(trip);
-      router.push('/trip-detail');
-    },
-    [setSelectedTrip, router]
-  );
-
-  const handleSearch = useCallback(
-    (query: string) => {
-      updateFilters({ searchQuery: query });
-    },
-    [updateFilters]
-  );
-
-  const renderTripCard = useCallback(
-    ({ item }: { item: Trip }) => <TripCard trip={item} onPress={handleTripPress} />,
-    [handleTripPress]
-  );
-
-  const keyExtractor = useCallback((item: Trip) => item.id, []);
-
-  const renderEmpty = () => {
-    if (loading) return null;
-    return (
-      <View style={styles.emptyState}>
-        <MaterialCommunityIcons name="airplane-off" size={56} color={colors.border} />
-        <Text variant="titleMedium" style={styles.emptyTitle}>
-          No trips found
-        </Text>
-        <Text variant="bodyMedium" style={styles.emptySubtitle}>
-          {filters.searchQuery
-            ? `No trips match "${filters.searchQuery}"`
-            : 'Check back soon for new trips'}
-        </Text>
-      </View>
-    );
-  };
-
-  const renderHeader = () => (
-    <>
-      {/* ── Greeting Header ── */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text variant="bodyMedium" style={styles.greeting}>
-            {getGreeting()},
-          </Text>
-          <Text variant="headlineSmall" style={styles.userName}>
-            {firstName}!
-          </Text>
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header — white card with rounded bottom */}
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+        {/* Top row: avatar + name + bell */}
+        <View style={styles.headerTop}>
+          <View style={styles.headerLeft}>
+            <View style={styles.avatarWrap}>
+              {avatarUrl && !avatarError ? (
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={styles.avatar}
+                  onError={() => setAvatarError(true)}
+                />
+              ) : (
+                <MaterialCommunityIcons name="account-outline" size={24} color="#9ca3af" />
+              )}
+            </View>
+            <View>
+              <Text style={styles.welcomeLabel}>WELCOME BACK</Text>
+              <Text style={styles.userName}>{userName}</Text>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.bellButton} activeOpacity={0.7}>
+            <MaterialCommunityIcons name="bell-outline" size={22} color="#4b5563" />
+            <View style={styles.bellDot} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={() => router.push('/profile')} accessibilityLabel="Profile">
-          {profile?.avatar_url ? (
-            <Avatar.Image size={44} source={{ uri: profile.avatar_url }} />
-          ) : (
-            <Avatar.Text
-              size={44}
-              label={avatarInitials}
-              style={styles.avatarText}
-              labelStyle={styles.avatarLabel}
-            />
-          )}
+
+        {/* Stats row */}
+        <View style={styles.statsRow}>
+          {/* Trust Score */}
+          <View style={styles.trustCard}>
+            <View style={styles.trustValueRow}>
+              <MaterialCommunityIcons name="shield-check" size={18} color={colors.primary} />
+              <Text style={styles.trustValue}>4.9</Text>
+            </View>
+            <Text style={styles.statLabel}>Trust Score</Text>
+          </View>
+
+          <View style={styles.statDivider} />
+
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>12</Text>
+            <Text style={styles.statLabel}>Trips</Text>
+          </View>
+
+          <View style={styles.statDivider} />
+
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>8</Text>
+            <Text style={styles.statLabel}>Deliveries</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Main actions grid */}
+      <View style={styles.actionsGrid}>
+        {/* Find a Traveler — orange card */}
+        <TouchableOpacity
+          style={styles.findCard}
+          onPress={() => router.push('/trips')}
+          activeOpacity={0.9}
+        >
+          <View style={styles.findCardDecorRight} />
+          <View style={styles.findCardDecorLeft} />
+          <View style={styles.actionIconBg}>
+            <MaterialCommunityIcons name="map-search" size={24} color="#ffffff" />
+          </View>
+          <View style={styles.actionCardText}>
+            <Text style={styles.findCardTitle}>Find a{'\n'}Traveler</Text>
+            <Text style={styles.findCardSub}>Send packages fast</Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* Post a Trip — white card */}
+        <TouchableOpacity
+          style={styles.postCard}
+          onPress={() => router.push('/requests')}
+          activeOpacity={0.9}
+        >
+          <View style={styles.postIconBg}>
+            <MaterialCommunityIcons name="airplane-takeoff" size={24} color="#2563eb" />
+          </View>
+          <View style={styles.actionCardText}>
+            <Text style={styles.postCardTitle}>Post a Trip</Text>
+            <Text style={styles.postCardSub}>Earn while you travel</Text>
+          </View>
+          <MaterialCommunityIcons
+            name="plus-circle-outline"
+            size={22}
+            color="#9ca3af"
+            style={styles.postCardPlus}
+          />
         </TouchableOpacity>
       </View>
 
-      {/* ── Search Bar ── */}
-      <View style={styles.searchContainer}>
-        <Searchbar
-          placeholder="Search by city or country…"
-          onChangeText={handleSearch}
-          value={filters.searchQuery}
-          style={styles.searchBar}
-          inputStyle={styles.searchInput}
-          iconColor={colors.textSecondary}
-          placeholderTextColor={colors.textDisabled}
-        />
-      </View>
-
-      {/* ── Section Heading ── */}
-      <View style={styles.sectionHeader}>
-        <Text variant="titleMedium" style={styles.sectionTitle}>
-          Available Trips
-        </Text>
-        {!loading && (
-          <Text variant="bodySmall" style={styles.tripCount}>
-            {filteredTrips.length} {filteredTrips.length === 1 ? 'trip' : 'trips'}
-          </Text>
-        )}
-      </View>
-
-      {/* ── Loading Indicator ── */}
-      {loading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text variant="bodyMedium" style={styles.loadingText}>
-            Loading trips…
-          </Text>
+      {/* How it Works */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>How it Works</Text>
+          <Text style={styles.learnMore}>Learn more</Text>
         </View>
-      )}
-    </>
-  );
 
-  return (
-    <View style={styles.container}>
-      <FlatList
-        data={filteredTrips}
-        renderItem={renderTripCard}
-        keyExtractor={keyExtractor}
-        ListHeaderComponent={renderHeader}
-        ListEmptyComponent={renderEmpty}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
-    </View>
+        <View style={styles.howCard}>
+          <View style={styles.stepsContainer}>
+            {/* Vertical connector line */}
+            <View style={styles.stepLine} />
+
+            {/* Step 1 — green */}
+            <View style={styles.step}>
+              <View style={[styles.stepCircle, styles.stepGreen]}>
+                <Text style={[styles.stepNumber, { color: '#16a34a' }]}>1</Text>
+              </View>
+              <View style={styles.stepBody}>
+                <Text style={styles.stepTitle}>Connect</Text>
+                <Text style={styles.stepDesc}>Match with a verified traveler heading your way.</Text>
+              </View>
+            </View>
+
+            {/* Step 2 — blue */}
+            <View style={styles.step}>
+              <View style={[styles.stepCircle, styles.stepBlue]}>
+                <Text style={[styles.stepNumber, { color: '#2563eb' }]}>2</Text>
+              </View>
+              <View style={styles.stepBody}>
+                <Text style={styles.stepTitle}>Handover</Text>
+                <Text style={styles.stepDesc}>Meet safely to hand over the package and details.</Text>
+              </View>
+            </View>
+
+            {/* Step 3 — purple */}
+            <View style={styles.step}>
+              <View style={[styles.stepCircle, styles.stepPurple]}>
+                <Text style={[styles.stepNumber, { color: '#9333ea' }]}>3</Text>
+              </View>
+              <View style={styles.stepBody}>
+                <Text style={styles.stepTitle}>Track & Receive</Text>
+                <Text style={styles.stepDesc}>Real-time updates until safe delivery.</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Active Shipments */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Active Shipments</Text>
+        <View style={styles.shipmentCard}>
+          <View style={styles.shipmentIconWrap}>
+            <MaterialCommunityIcons name="package-variant" size={24} color={colors.primary} />
+          </View>
+          <View style={styles.shipmentInfo}>
+            <Text style={styles.shipmentName}>Macbook Pro M2</Text>
+            <Text style={styles.shipmentDest}>To: San Francisco, CA</Text>
+          </View>
+          <View style={styles.shipmentStatus}>
+            <View style={styles.transitBadge}>
+              <Text style={styles.transitText}>IN TRANSIT</Text>
+            </View>
+            <Text style={styles.arrivalText}>Arrives in 2 days</Text>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#f7fafc',
   },
-  listContent: {
-    paddingBottom: spacing.xl,
+  contentContainer: {
+    paddingBottom: 100,
   },
 
-  // ── Header ──────────────────────────────────────────────────────────────────
+  // ---- Header ----
   header: {
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.lg,   // overridden inline with safe-area inset
+    paddingBottom: spacing.lg,
+    borderBottomLeftRadius: radius.xxl,
+    borderBottomRightRadius: radius.xxl,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 20,
+    elevation: 4,
+    marginBottom: spacing.lg,
+  },
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    marginBottom: spacing.lg,
   },
   headerLeft: {
-    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
-  greeting: {
+  avatarWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: '#e5e7eb',
+    borderWidth: 2,
+    borderColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+  },
+  welcomeLabel: {
+    fontSize: 10,
+    fontWeight: '600',
     color: colors.textSecondary,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   userName: {
-    color: colors.textPrimary,
+    fontSize: 20,
     fontWeight: '700',
-    marginTop: 2,
+    color: '#1a202c',
+    lineHeight: 24,
   },
-  avatarText: {
+  bellButton: {
+    padding: spacing.sm,
+    borderRadius: radius.full,
+    position: 'relative',
+  },
+  bellDot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: radius.full,
     backgroundColor: colors.primary,
-  },
-  avatarLabel: {
-    color: colors.surface,
-    fontWeight: '600',
+    borderWidth: 1.5,
+    borderColor: colors.surface,
   },
 
-  // ── Search ───────────────────────────────────────────────────────────────────
-  searchContainer: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  // Stats row
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  searchBar: {
-    backgroundColor: colors.background,
+  trustCard: {
+    flex: 1,
+    backgroundColor: '#f9fafb',
     borderRadius: radius.lg,
-    elevation: 0,
-    height: 44,
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    alignItems: 'center',
   },
-  searchInput: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    paddingVertical: 0,
+  trustValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
+  },
+  trustValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: '#e5e7eb',
+    marginHorizontal: spacing.sm,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1a202c',
+    marginBottom: 2,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: '#718096',
+    fontWeight: '500',
   },
 
-  // ── Section Heading ──────────────────────────────────────────────────────────
+  // ---- Actions Grid ----
+  actionsGrid: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.md,
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+
+  // Find a Traveler card (orange)
+  findCard: {
+    flex: 1,
+    height: 176,
+    backgroundColor: colors.primary,
+    borderRadius: radius.xxl,
+    padding: spacing.md,
+    justifyContent: 'space-between',
+    overflow: 'hidden',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  findCardDecorRight: {
+    position: 'absolute',
+    right: -24,
+    top: -24,
+    width: 96,
+    height: 96,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  findCardDecorLeft: {
+    position: 'absolute',
+    left: -24,
+    bottom: -24,
+    width: 80,
+    height: 80,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  actionIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionCardText: {
+    zIndex: 1,
+  },
+  findCardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#ffffff',
+    lineHeight: 22,
+    marginBottom: 4,
+  },
+  findCardSub: {
+    fontSize: 11,
+    color: '#fde8df',
+  },
+
+  // Post a Trip card (white)
+  postCard: {
+    flex: 1,
+    height: 176,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xxl,
+    padding: spacing.md,
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  postIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    backgroundColor: '#eff6ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  postCardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1a202c',
+    marginBottom: 4,
+  },
+  postCardSub: {
+    fontSize: 11,
+    color: '#718096',
+  },
+  postCardPlus: {
+    position: 'absolute',
+    bottom: spacing.md,
+    right: spacing.md,
+  },
+
+  // ---- Sections ----
+  section: {
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.lg,
+  },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+    alignItems: 'flex-end',
+    marginBottom: spacing.md,
   },
   sectionTitle: {
-    color: colors.textPrimary,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1a202c',
   },
-  tripCount: {
-    color: colors.textSecondary,
+  learnMore: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.primary,
   },
 
-  // ── Loading ──────────────────────────────────────────────────────────────────
-  loadingContainer: {
+  // ---- How it Works ----
+  howCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  stepsContainer: {
+    position: 'relative',
+  },
+  stepLine: {
+    position: 'absolute',
+    left: 19,
+    top: 40,
+    bottom: 16,
+    width: 2,
+    backgroundColor: '#f3f4f6',
+    zIndex: 0,
+  },
+  step: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  stepCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
     alignItems: 'center',
-    paddingVertical: spacing.xxl,
+    justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: colors.surface,
+    zIndex: 1,
   },
-  loadingText: {
-    marginTop: spacing.sm,
-    color: colors.textSecondary,
+  stepGreen: { backgroundColor: '#dcfce7' },
+  stepBlue:  { backgroundColor: '#dbeafe' },
+  stepPurple:{ backgroundColor: '#f3e8ff' },
+  stepNumber: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  stepBody: {
+    flex: 1,
+    paddingTop: 4,
+  },
+  stepTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1a202c',
+    marginBottom: 2,
+  },
+  stepDesc: {
+    fontSize: 12,
+    color: '#718096',
+    lineHeight: 18,
   },
 
-  // ── Empty State ──────────────────────────────────────────────────────────────
-  emptyState: {
+  // ---- Active Shipments ----
+  shipmentCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.md,
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.xxl,
-    paddingHorizontal: spacing.xl,
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
   },
-  emptyTitle: {
-    color: colors.textPrimary,
+  shipmentIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.lg,
+    backgroundColor: '#fff7ed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+  },
+  shipmentInfo: {
+    flex: 1,
+  },
+  shipmentName: {
+    fontSize: 14,
     fontWeight: '600',
-    marginTop: spacing.md,
+    color: '#1a202c',
+    marginBottom: 2,
   },
-  emptySubtitle: {
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: spacing.xs,
+  shipmentDest: {
+    fontSize: 12,
+    color: '#718096',
   },
-
-  // ── List ─────────────────────────────────────────────────────────────────────
-  separator: {
-    height: spacing.sm,
+  shipmentStatus: {
+    alignItems: 'flex-end',
+  },
+  transitBadge: {
+    backgroundColor: '#dcfce7',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.md,
+    marginBottom: 4,
+  },
+  transitText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#15803d',
+    letterSpacing: 0.5,
+  },
+  arrivalText: {
+    fontSize: 10,
+    color: '#718096',
   },
 });

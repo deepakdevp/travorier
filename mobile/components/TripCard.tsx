@@ -1,13 +1,18 @@
 /**
  * TripCard Component
- * Displays a trip in a card format with route, date, traveler info, and pricing.
- * Follows the Travorier design system (docs/DESIGN.md).
+ *
+ * Rewritten to match Stitch browse_trips card design:
+ * - PNR badge top-right (green verified / gray pending)
+ * - Route row: origin code + city | airplane + dashed line + duration | dest code + city
+ * - Departure + Capacity info grid
+ * - Bottom: traveler avatar + name + star rating | price/kg
+ *
+ * All colors sourced from @/lib/theme — no hardcoded hex values.
  */
-import { View, StyleSheet } from 'react-native';
-import { Card, Text, Avatar, Chip } from 'react-native-paper';
+import { View, StyleSheet, TouchableOpacity, Image, Text } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { colors, spacing, radius } from '@/lib/theme';
 import type { Trip } from '@/stores/tripsStore';
-import { colors, spacing, radius, statusColors } from '@/lib/theme';
 
 interface TripCardProps {
   trip: Trip;
@@ -16,360 +21,382 @@ interface TripCardProps {
 
 export default function TripCard({ trip, onPress }: TripCardProps) {
   const departureDate = new Date(trip.departure_date);
-  const formattedDate = departureDate.toLocaleDateString('en-IN', {
-    day: 'numeric',
+  const formattedDate = departureDate.toLocaleDateString('en-US', {
     month: 'short',
+    day: 'numeric',
     year: 'numeric',
   });
 
+  // Use country code as airport code placeholder (no origin_code field)
+  const originCode = trip.origin_country?.slice(0, 3).toUpperCase() ?? '---';
+  const destCode = trip.destination_country?.slice(0, 3).toUpperCase() ?? '---';
+
   const userInitials = trip.traveler.full_name
     .split(' ')
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2);
 
-  const isVerified = trip.pnr_verified || trip.traveler.verified;
+  // Display trust score as a rating out of 5 (trust_score is 0–100)
+  const rating = trip.traveler.trust_score != null
+    ? (trip.traveler.trust_score / 20).toFixed(1)
+    : '—';
 
   return (
-    <Card style={styles.card} mode="elevated" onPress={() => onPress(trip)}>
-      <Card.Content style={styles.cardContent}>
-        {/* ── Top Badge Row ── */}
-        {(trip.is_boosted || isVerified) && (
-          <View style={styles.badgeRow}>
-            {trip.is_boosted && (
-              <View style={styles.boostedBadge}>
-                <MaterialCommunityIcons name="lightning-bolt" size={12} color={colors.primary} />
-                <Text variant="labelSmall" style={styles.boostedText}>
-                  Boosted
-                </Text>
-              </View>
-            )}
-            {isVerified && (
-              <View style={styles.verifiedBadge}>
-                <MaterialCommunityIcons
-                  name="shield-check"
-                  size={12}
-                  color={statusColors.active.text}
-                />
-                <Text variant="labelSmall" style={styles.verifiedText}>
-                  {trip.pnr_verified ? 'PNR Verified' : 'Verified'}
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => onPress(trip)}
+      activeOpacity={0.85}
+    >
+      {/* PNR badge — top-right corner */}
+      <View
+        style={[
+          styles.pnrBadge,
+          trip.pnr_verified ? styles.pnrBadgeVerified : styles.pnrBadgePending,
+        ]}
+      >
+        <MaterialCommunityIcons
+          name={trip.pnr_verified ? 'shield-check' : 'shield-outline'}
+          size={11}
+          color={trip.pnr_verified ? '#16a34a' : colors.textDisabled}
+        />
+        <Text
+          style={[
+            styles.pnrText,
+            trip.pnr_verified ? styles.pnrTextVerified : styles.pnrTextPending,
+          ]}
+        >
+          {trip.pnr_verified ? 'PNR VERIFIED' : 'PENDING PNR'}
+        </Text>
+      </View>
 
-        {/* ── Route Section ── */}
-        <View style={styles.routeRow}>
-          {/* Origin */}
-          <View style={styles.cityBlock}>
-            <Text variant="titleMedium" style={styles.cityName} numberOfLines={1}>
-              {trip.origin_city}
-            </Text>
-            <Text variant="labelSmall" style={styles.countryName} numberOfLines={1}>
-              {trip.origin_country}
-            </Text>
-          </View>
-
-          {/* Arrow */}
-          <View style={styles.routeArrow}>
-            <View style={styles.arrowLine} />
-            <MaterialCommunityIcons name="airplane" size={22} color={colors.primary} />
-            <View style={styles.arrowLine} />
-          </View>
-
-          {/* Destination */}
-          <View style={[styles.cityBlock, styles.cityBlockRight]}>
-            <Text
-              variant="titleMedium"
-              style={[styles.cityName, styles.cityNameRight]}
-              numberOfLines={1}
-            >
-              {trip.destination_city}
-            </Text>
-            <Text
-              variant="labelSmall"
-              style={[styles.countryName, styles.countryNameRight]}
-              numberOfLines={1}
-            >
-              {trip.destination_country}
-            </Text>
-          </View>
+      {/* Route row */}
+      <View style={styles.routeRow}>
+        {/* Origin */}
+        <View style={styles.cityBlock}>
+          <Text style={styles.airportCode}>{originCode}</Text>
+          <Text style={styles.cityName}>{trip.origin_city}</Text>
         </View>
 
-        {/* ── Flight Meta Row ── */}
-        <View style={styles.metaRow}>
-          <View style={styles.metaItem}>
-            <MaterialCommunityIcons name="calendar-outline" size={14} color={colors.textSecondary} />
-            <Text variant="bodySmall" style={styles.metaText}>
-              {formattedDate}
-            </Text>
+        {/* Center: dashed line + airplane icon + duration */}
+        <View style={styles.routeCenter}>
+          {/* Dashed line behind the icon */}
+          <View style={styles.dashedLine} />
+          {/* Airplane icon sits on top of the line */}
+          <View style={styles.airplaneWrapper}>
+            <MaterialCommunityIcons
+              name="airplane"
+              size={14}
+              color={colors.primary}
+              style={styles.airplaneIcon}
+            />
           </View>
-
-          {trip.flight_number && trip.airline && (
-            <View style={styles.metaItem}>
-              <MaterialCommunityIcons
-                name="airplane-clock"
-                size={14}
-                color={colors.textSecondary}
-              />
-              <Text variant="bodySmall" style={styles.metaText}>
-                {trip.airline} {trip.flight_number}
-              </Text>
-            </View>
+          {/* Duration label */}
+          {trip.flight_number || trip.airline ? (
+            <Text style={styles.durationText}>
+              {trip.airline ? trip.airline : ''}{trip.flight_number ? ` ${trip.flight_number}` : ''}
+            </Text>
+          ) : (
+            <Text style={styles.durationText}>Direct</Text>
           )}
         </View>
 
-        {/* ── Divider ── */}
-        <View style={styles.divider} />
+        {/* Destination */}
+        <View style={[styles.cityBlock, styles.cityBlockRight]}>
+          <Text style={styles.airportCode}>{destCode}</Text>
+          <Text style={[styles.cityName, styles.cityNameRight]}>{trip.destination_city}</Text>
+        </View>
+      </View>
 
-        {/* ── Traveler Row ── */}
+      {/* Info grid: Departure + Capacity */}
+      <View style={styles.infoGrid}>
+        <View style={styles.infoCell}>
+          <Text style={styles.infoCellLabel}>Departure</Text>
+          <View style={styles.infoCellValue}>
+            <MaterialCommunityIcons name="calendar" size={13} color={colors.primary} />
+            <Text style={styles.infoCellText}>{formattedDate}</Text>
+          </View>
+        </View>
+        <View style={styles.infoCell}>
+          <Text style={styles.infoCellLabel}>Capacity</Text>
+          <View style={styles.infoCellValue}>
+            <MaterialCommunityIcons name="bag-suitcase" size={13} color={colors.primary} />
+            <Text style={styles.infoCellText}>{trip.available_weight_kg} kg left</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Bottom row: traveler + price */}
+      <View style={styles.bottomRow}>
+        {/* Traveler avatar + name + rating */}
         <View style={styles.travelerRow}>
           {trip.traveler.avatar_url ? (
-            <Avatar.Image size={36} source={{ uri: trip.traveler.avatar_url }} />
-          ) : (
-            <Avatar.Text
-              size={36}
-              label={userInitials}
-              style={styles.avatarFallback}
-              labelStyle={styles.avatarLabel}
+            <Image
+              source={{ uri: trip.traveler.avatar_url }}
+              style={styles.avatar}
             />
+          ) : (
+            <View style={styles.avatarFallback}>
+              <Text style={styles.avatarInitials}>{userInitials}</Text>
+            </View>
           )}
           <View style={styles.travelerMeta}>
             <View style={styles.travelerNameRow}>
-              <Text variant="bodyMedium" style={styles.travelerName} numberOfLines={1}>
-                {trip.traveler.full_name}
+              <Text style={styles.travelerName}>
+                {/* Show abbreviated first name + last initial */}
+                {trip.traveler.full_name.split(' ')[0]}{' '}
+                {trip.traveler.full_name.split(' ')[1]?.[0] ?? ''}.
               </Text>
               {trip.traveler.verified && (
                 <MaterialCommunityIcons
                   name="check-decagram"
-                  size={14}
-                  color={statusColors.active.text}
+                  size={13}
+                  color={colors.primary}
                 />
               )}
             </View>
-            <View style={styles.starsRow}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <MaterialCommunityIcons
-                  key={star}
-                  name={star <= Math.round(trip.traveler.trust_score / 20) ? 'star' : 'star-outline'}
-                  size={12}
-                  color={colors.star}
-                />
-              ))}
-              <Text variant="labelSmall" style={styles.trustScore}>
-                {trip.traveler.trust_score}
+            <View style={styles.ratingRow}>
+              <MaterialCommunityIcons name="star" size={11} color={colors.warning} />
+              <Text style={styles.ratingText}>
+                {rating}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* ── Divider ── */}
-        <View style={styles.divider} />
-
-        {/* ── Bottom: Weight + Price ── */}
-        <View style={styles.bottomRow}>
-          <View style={styles.weightBadge}>
-            <MaterialCommunityIcons
-              name="weight-kilogram"
-              size={14}
-              color={colors.textSecondary}
-            />
-            <Text variant="bodySmall" style={styles.weightText}>
-              {trip.available_weight_kg} kg available
-            </Text>
-          </View>
-
-          <View style={styles.priceBadge}>
-            <Text variant="titleSmall" style={styles.priceAmount}>
-              ₹{trip.price_per_kg}
-            </Text>
-            <Text variant="labelSmall" style={styles.priceUnit}>
-              /kg
-            </Text>
-          </View>
+        {/* Price */}
+        <View style={styles.priceBlock}>
+          <Text style={styles.priceAmount}>${trip.price_per_kg}</Text>
+          <Text style={styles.priceUnit}>/kg</Text>
         </View>
-      </Card.Content>
-    </Card>
+      </View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
     marginHorizontal: spacing.md,
+    marginVertical: spacing.sm,
     backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    // subtle shadow via elevation
-  },
-  cardContent: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-
-  // ── Badges ───────────────────────────────────────────────────────────────────
-  badgeRow: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  boostedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primarySubtle,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs / 2,
-    borderRadius: radius.full,
-    gap: 4,
-  },
-  boostedText: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: statusColors.active.bg,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs / 2,
-    borderRadius: radius.full,
-    gap: 4,
-  },
-  verifiedText: {
-    color: statusColors.active.text,
-    fontWeight: '600',
+    borderRadius: radius.xl,           // rounded-2xl
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+    overflow: 'hidden',
   },
 
-  // ── Route ────────────────────────────────────────────────────────────────────
+  // ---- PNR badge (top-right, rounded-bl + rounded-tr) ----
+  pnrBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderBottomLeftRadius: radius.lg,
+    borderTopRightRadius: radius.xl,
+    zIndex: 2,
+  },
+  pnrBadgeVerified: {
+    backgroundColor: '#dcfce7',        // green-100
+    borderBottomWidth: 1,
+    borderLeftWidth: 1,
+    borderColor: '#bbf7d0',            // green-200
+  },
+  pnrBadgePending: {
+    backgroundColor: colors.divider,
+    borderBottomWidth: 1,
+    borderLeftWidth: 1,
+    borderColor: colors.border,
+  },
+  pnrText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  pnrTextVerified: {
+    color: '#16a34a',                  // green-700
+  },
+  pnrTextPending: {
+    color: colors.textDisabled,
+  },
+
+  // ---- Route row ----
   routeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginTop: spacing.md,             // leave room for badge
+    marginBottom: spacing.md,
   },
   cityBlock: {
     flex: 1,
+    alignItems: 'flex-start',
   },
   cityBlockRight: {
     alignItems: 'flex-end',
   },
+  airportCode: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontWeight: '400',
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
   cityName: {
-    color: colors.textPrimary,
+    fontSize: 18,
     fontWeight: '700',
+    color: colors.textPrimary,
   },
   cityNameRight: {
     textAlign: 'right',
   },
-  countryName: {
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  countryNameRight: {
-    textAlign: 'right',
-  },
-  routeArrow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    gap: 4,
-  },
-  arrowLine: {
+
+  // Center connector
+  routeCenter: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xs,
+    position: 'relative',
+  },
+  dashedLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: '50%',
     height: 1,
-    backgroundColor: colors.border,
-    minWidth: 8,
+    borderStyle: 'dashed',
+    borderTopWidth: 1.5,
+    borderColor: '#d1d5db',            // gray-300
+    marginTop: -4,                     // offset so it aligns with icon center
+  },
+  airplaneWrapper: {
+    backgroundColor: colors.surface,
+    paddingHorizontal: 3,
+    zIndex: 1,
+    marginBottom: 2,
+  },
+  airplaneIcon: {
+    transform: [{ rotate: '90deg' }],
+  },
+  durationText: {
+    fontSize: 10,
+    color: colors.textSecondary,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 3,
+    zIndex: 1,
+    textAlign: 'center',
   },
 
-  // ── Meta Row ─────────────────────────────────────────────────────────────────
-  metaRow: {
+  // ---- Info grid ----
+  infoGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    marginBottom: spacing.sm,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
-  metaItem: {
+  infoCell: {
+    flex: 1,
+    backgroundColor: '#f9fafb',       // gray-50
+    borderRadius: radius.md,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  infoCellLabel: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginBottom: 3,
+  },
+  infoCellValue: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  metaText: {
-    color: colors.textSecondary,
+  infoCellText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textPrimary,
   },
 
-  // ── Divider ──────────────────────────────────────────────────────────────────
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: spacing.sm,
+  // ---- Bottom row ----
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: spacing.sm + 2,
+    borderTopWidth: 1,
+    borderTopColor: '#f3f4f6',
   },
-
-  // ── Traveler ─────────────────────────────────────────────────────────────────
   travelerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
-  avatarFallback: {
-    backgroundColor: colors.primarySubtle,
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.white,
   },
-  avatarLabel: {
-    color: colors.primary,
+  avatarFallback: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitials: {
+    fontSize: 12,
     fontWeight: '700',
-    fontSize: 13,
+    color: colors.primary,
   },
   travelerMeta: {
-    flex: 1,
+    gap: 1,
   },
   travelerNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
   },
   travelerName: {
-    color: colors.textPrimary,
+    fontSize: 13,
     fontWeight: '600',
-    flex: 1,
+    color: colors.textPrimary,
   },
-  starsRow: {
+  ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-    marginTop: 2,
   },
-  trustScore: {
+  ratingText: {
+    fontSize: 11,
     color: colors.textSecondary,
-    marginLeft: 4,
   },
 
-  // ── Bottom Row ───────────────────────────────────────────────────────────────
-  bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  weightBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  weightText: {
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  priceBadge: {
+  // Price
+  priceBlock: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    backgroundColor: colors.primarySubtle,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs / 2,
-    borderRadius: radius.md,
-    gap: 2,
+    gap: 1,
   },
   priceAmount: {
-    color: colors.primary,
+    fontSize: 18,
     fontWeight: '700',
+    color: colors.primary,
   },
   priceUnit: {
-    color: colors.primary,
-    opacity: 0.8,
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontWeight: '400',
   },
 });

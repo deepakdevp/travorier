@@ -24,12 +24,19 @@ export const colors = {
 
   // Semantic
   success: '#16a34a',
+  successLight: '#dcfce7',
   successSubtle: '#dcfce7',
   warning: '#d97706',
   warningSubtle: '#fef3c7',
   error: '#dc2626',
   errorSubtle: '#fee2e2',
+  errorLight: '#fee2e2',
   star: '#f59e0b',
+
+  // Aliases for compatibility with feature/ui-revamp screens
+  white: '#ffffff',
+  black: '#0f172a',
+  divider: '#e5e7eb',
 } as const;
 
 // ─── Status Chip Tokens ───────────────────────────────────────────────────────
@@ -57,6 +64,7 @@ export const radius = {
   md: 8,
   lg: 12,
   xl: 16,
+  xxl: 24,
   full: 9999,
 } as const;
 
