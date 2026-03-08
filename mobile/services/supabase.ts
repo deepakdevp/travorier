@@ -15,12 +15,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+const isWeb = Platform.OS === 'web';
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
+    storage: isWeb ? undefined : AsyncStorage, // web uses localStorage by default
     autoRefreshToken: true,
     persistSession: true,
-    // On web, Supabase returns the session in the URL hash after OAuth redirect
-    detectSessionInUrl: Platform.OS === 'web',
+    detectSessionInUrl: isWeb, // parse OAuth tokens from URL hash on web
   },
 });
