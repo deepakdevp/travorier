@@ -28,6 +28,7 @@ export interface Trip {
   status: 'active' | 'matched' | 'completed';
   is_boosted: boolean;
   pnr_verified: boolean;
+  notes?: string;
   created_at: string;
 }
 
