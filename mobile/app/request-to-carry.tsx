@@ -19,6 +19,8 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTripsStore } from '@/stores/tripsStore';
+import { useAuthStore } from '@/stores/authStore';
+import { supabase } from '@/services/supabase';
 import { colors, spacing, radius } from '@/lib/theme';
 
 // ---------------------------------------------------------------------------
@@ -59,6 +61,7 @@ export default function RequestToCarryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { selectedTrip } = useTripsStore();
+  const { user } = useAuthStore();
 
   // ── Business-logic state (preserved from original) ──────────────────────
   const [packageWeight, setPackageWeight] = useState('');
@@ -112,19 +115,18 @@ export default function RequestToCarryScreen() {
           onPress: async () => {
             setLoading(true);
             try {
-              // Simulate API call
-              await new Promise((resolve) => setTimeout(resolve, 1000));
+              const { error } = await supabase
+                .from('matches')
+                .insert({
+                  trip_id: trip.id,
+                  traveler_id: trip.traveler_id,
+                  sender_id: user?.id,
+                  agreed_weight_kg: weight,
+                  agreed_price: estimatedCost,
+                  status: 'initiated',
+                });
 
-              // In production, this would be:
-              // const { data, error } = await supabase
-              //   .from('matches')
-              //   .insert({
-              //     trip_id: trip.id,
-              //     sender_id: currentUserId,
-              //     agreed_weight_kg: weight,
-              //     agreed_price: estimatedCost,
-              //     status: 'initiated',
-              //   });
+              if (error) throw error;
 
               setLoading(false);
               router.replace('/match-confirmation');

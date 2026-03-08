@@ -359,11 +359,11 @@ function RequestCard({
 // ---------------------------------------------------------------------------
 // Filter tab types
 // ---------------------------------------------------------------------------
-type FilterValue = 'all' | 'open' | 'matched' | 'completed';
+type FilterValue = 'all' | 'active' | 'matched' | 'completed';
 
 const FILTER_TABS: { label: string; value: FilterValue }[] = [
   { label: 'All',       value: 'all' },
-  { label: 'Open',      value: 'open' },
+  { label: 'Open',      value: 'active' },
   { label: 'Matched',   value: 'matched' },
   { label: 'Completed', value: 'completed' },
 ];

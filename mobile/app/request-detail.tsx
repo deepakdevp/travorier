@@ -32,16 +32,19 @@ import { colors, spacing, radius } from '@/lib/theme';
 // Status maps (structure preserved; colors replaced with theme tokens)
 // ---------------------------------------------------------------------------
 const STATUS_BG: Record<string, string> = {
+  active: colors.successLight,
   open: colors.successLight,
   matched: colors.primaryLight,
   completed: colors.divider,
 };
 const STATUS_FG: Record<string, string> = {
+  active: colors.success,
   open: colors.success,
   matched: colors.primary,
   completed: colors.textSecondary,
 };
 const STATUS_LABEL: Record<string, string> = {
+  active: 'Open',
   open: 'Open',
   matched: 'Matched',
   completed: 'Completed',
