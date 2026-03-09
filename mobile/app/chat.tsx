@@ -76,6 +76,11 @@ export default function ChatScreen() {
     };
   }, [matchId]);
 
+  const markMessagesRead = async () => {
+    if (!user) return;
+    await supabase.rpc('mark_messages_read', { p_match_id: matchId });
+  };
+
   const loadMessageHistory = async () => {
     setLoadingHistory(true);
     setLoadError(false);
@@ -91,6 +96,7 @@ export default function ChatScreen() {
         setLoadError(true);
       } else {
         setMessages(data ?? []);
+        markMessagesRead(); // fire and forget — errors are non-critical
       }
     } catch (err) {
       console.error('Error loading messages:', err);
