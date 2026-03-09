@@ -76,7 +76,7 @@ async def root():
 # app.include_router(trips.router, prefix=settings.API_V1_PREFIX, tags=["Trips"])
 # app.include_router(requests_api.router, prefix=settings.API_V1_PREFIX, tags=["Requests"])
 # app.include_router(matches.router, prefix=settings.API_V1_PREFIX, tags=["Matches"])
-# app.include_router(payments.router, prefix=settings.API_V1_PREFIX, tags=["Payments"])
+app.include_router(payments.router, prefix=settings.API_V1_PREFIX, tags=["Payments"])
 
 
 # Exception handlers
