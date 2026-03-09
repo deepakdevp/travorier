@@ -40,7 +40,7 @@ class TransactionItem(BaseModel):
     id: str
     transaction_type: str
     amount: float
-    credits_purchased: Optional[int]
-    credits_used: Optional[int]
+    credits_purchased: Optional[int] = None
+    credits_used: Optional[int] = None
     payment_status: str
     created_at: datetime
