@@ -135,7 +135,7 @@ export default function MyTripDetailScreen() {
                 },
                 agreed_weight_kg: match.agreed_weight_kg,
                 status: 'agreed',
-                contact_unlocked: true,
+                contact_unlocked: match.contact_unlocked,
               });
               router.push('/chat');
             } catch (err: any) {
