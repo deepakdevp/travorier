@@ -32,3 +32,7 @@ def get_supabase_admin() -> Client:
         Supabase Client with service role key
     """
     return get_supabase_client()
+
+
+# Alias used by payment endpoints
+get_supabase_admin_client = get_supabase_admin
