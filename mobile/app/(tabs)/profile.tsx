@@ -3,7 +3,7 @@
  * Design: Stitch "User Account Profile" screen
  * projects/7580322135798196968/screens/316b74388bb042aa997649d5c2423ea2
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -15,6 +15,7 @@ import {
 import { Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/stores/authStore';
+import { useCreditStore } from '@/stores/creditStore';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { colors, spacing, radius } from '@/lib/theme';
@@ -77,6 +78,12 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user, signOut } = useAuthStore();
   const router = useRouter();
+
+  const { balance, fetchBalance } = useCreditStore();
+
+  useEffect(() => {
+    fetchBalance();
+  }, []);
 
   const [avatarError, setAvatarError] = React.useState(false);
 
@@ -192,6 +199,24 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>Delivered</Text>
           </View>
         </View>
+
+        {/* ── Credits Card ── */}
+        <TouchableOpacity
+          style={styles.creditsCard}
+          onPress={() => router.push('/buy-credits')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.creditsLeft}>
+            <MaterialCommunityIcons name="lightning-bolt" size={22} color={colors.primary} />
+            <View>
+              <Text style={styles.creditsLabel}>Credits</Text>
+              <Text style={styles.creditsBalance}>{balance} available</Text>
+            </View>
+          </View>
+          <View style={styles.buyCreditsBtn}>
+            <Text style={styles.buyCreditsText}>Buy More</Text>
+          </View>
+        </TouchableOpacity>
 
         {/* ── Menu Section 1 ── */}
         <View style={styles.menuCard}>
@@ -478,6 +503,45 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: colors.error,
+  },
+
+  // ── Credits Card ──────────────────────────────────────────────────────────
+  creditsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.primarySubtle,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.primary + '30',
+  },
+  creditsLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  creditsLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  creditsBalance: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  buyCreditsBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  buyCreditsText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.surface,
   },
 
   // ── Version ───────────────────────────────────────────────────────────────
