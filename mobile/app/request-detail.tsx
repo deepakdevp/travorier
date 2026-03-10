@@ -164,13 +164,14 @@ export default function RequestDetailScreen() {
 
   const { selectedRequest, setSelectedMatch, unlockContact, matches, fetchMatchesForRequest } =
     useRequestsStore();
-  const { balance } = useCreditStore();
+  const { balance, fetchBalance } = useCreditStore();
 
   const [unlockModalVisible, setUnlockModalVisible] = useState(false);
   const [pendingMatch, setPendingMatch] = useState<Match | null>(null);
   const [unlocking, setUnlocking] = useState(false);
 
   useEffect(() => {
+    fetchBalance();
     if (!selectedRequest) {
       router.back();
     } else {
@@ -469,6 +470,17 @@ export default function RequestDetailScreen() {
             <MaterialCommunityIcons name="wallet" size={14} color={colors.primary} />
             <Text style={styles.balanceText}>Your balance: {balance} credits</Text>
           </View>
+
+          {/* Buy Credits nudge when balance is insufficient */}
+          {balance < 1 && (
+            <TouchableOpacity
+              style={styles.buyMoreBtn}
+              onPress={() => { setUnlockModalVisible(false); router.push('/buy-credits'); }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.buyMoreText}>Buy Credits</Text>
+            </TouchableOpacity>
+          )}
 
           {/* Security note */}
           <View style={styles.securityRow}>
@@ -1047,6 +1059,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: colors.primary,
+  },
+  // Buy more credits nudge
+  buyMoreBtn: {
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  buyMoreText: {
+    color: colors.primary,
+    fontWeight: '600',
+    fontSize: 14,
   },
   // Security row
   securityRow: {
