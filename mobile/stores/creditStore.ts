@@ -4,34 +4,41 @@
 import { create } from 'zustand';
 import { api } from '@/services/api';
 
-interface CreditState {
+interface CreditStore {
   balance: number;
   loading: boolean;
-
-  // Actions
+  error: string | null;
   fetchBalance: () => Promise<void>;
-  deductCredit: (amount: number) => void;
-  addCredits: (amount: number) => void;
+  purchaseCredits: (packId: string, paymentIntentId: string) => Promise<{ success: boolean; newBalance: number }>;
+  deductCredit: (amount?: number) => void;
 }
 
-export const useCreditStore = create<CreditState>((set) => ({
+export const useCreditStore = create<CreditStore>((set) => ({
   balance: 0,
   loading: false,
+  error: null,
 
   fetchBalance: async () => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     try {
-      const response = await api.payments.getCredits();
-      set({ balance: response.data.balance, loading: false });
-    } catch (error) {
-      console.error('Error fetching credit balance:', error);
-      set({ loading: false });
+      const res = await api.payments.getCredits();
+      set({ balance: res.data.balance, loading: false });
+    } catch {
+      set({ error: 'Failed to fetch balance', loading: false });
     }
   },
 
-  deductCredit: (amount) =>
-    set((state) => ({ balance: Math.max(0, state.balance - amount) })),
+  purchaseCredits: async (packId: string, paymentIntentId: string) => {
+    try {
+      const res = await api.payments.confirmPayment({ payment_intent_id: paymentIntentId });
+      const newBalance = res.data.new_balance;
+      set({ balance: newBalance });
+      return { success: true, newBalance };
+    } catch (err: any) {
+      throw new Error(err?.response?.data?.detail || 'Payment confirmation failed');
+    }
+  },
 
-  addCredits: (amount) =>
-    set((state) => ({ balance: state.balance + amount })),
+  deductCredit: (amount = 1) =>
+    set((state) => ({ balance: Math.max(0, state.balance - amount) })),
 }));

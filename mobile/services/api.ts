@@ -93,11 +93,12 @@ class ApiClient {
 
   // Payment endpoints
   payments = {
-    createIntent: (data: any) =>
+    createIntent: (data: { pack_id: string }) =>
       this.client.post('/api/v1/payments/create-intent', data),
+    confirmPayment: (data: { payment_intent_id: string }) =>
+      this.client.post('/api/v1/payments/confirm-payment', data),
     getCredits: () => this.client.get('/api/v1/payments/credits'),
-    buyCredits: (data: any) =>
-      this.client.post('/api/v1/payments/buy-credits', data),
+    getPacks: () => this.client.get('/api/v1/payments/packs'),
     getTransactions: () => this.client.get('/api/v1/payments/transactions'),
   };
 }
