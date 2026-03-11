@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import { Platform } from 'react-native';
 import { supabase } from '@/services/supabase';
 import { Session, User } from '@supabase/supabase-js';
+import { registerPushToken } from '@/lib/registerPushToken';
 
 export interface Profile {
   id: string;
@@ -117,6 +118,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Load profile if session exists
       if (session?.user) {
         get().loadProfile();
+        registerPushToken().catch(console.warn);
       }
 
       supabase.auth.onAuthStateChange((_event, session) => {
@@ -128,6 +130,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // Reload profile on sign-in
         if (session?.user) {
           get().loadProfile();
+          registerPushToken().catch(console.warn);
         } else {
           set({ profile: null });
         }

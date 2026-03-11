@@ -114,6 +114,18 @@ class ApiClient {
     scanQR: (matchId: string, qr_payload: string) =>
       this.client.post(`/api/v1/handover/matches/${matchId}/scan-qr`, { qr_payload }),
   };
+
+  // Notification endpoints
+  notifications = {
+    registerToken: (token: string) =>
+      this.client.post('/api/v1/notifications/register-token', { token }),
+    list: () =>
+      this.client.get('/api/v1/notifications'),
+    markRead: (id: string) =>
+      this.client.patch(`/api/v1/notifications/${id}/read`, {}),
+    markAllRead: () =>
+      this.client.patch('/api/v1/notifications/read-all', {}),
+  };
 }
 
 export const api = new ApiClient();
