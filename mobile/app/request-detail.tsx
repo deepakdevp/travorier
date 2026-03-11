@@ -969,6 +969,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
     paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     backgroundColor: colors.star,
     borderBottomLeftRadius: radius.xl,
     borderBottomRightRadius: radius.xl,
