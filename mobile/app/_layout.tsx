@@ -61,6 +61,7 @@ export default function RootLayout() {
           <Stack.Screen name="notifications" options={{ headerShown: false }} />
           <Stack.Screen name="write-review" options={{ headerShown: false }} />
           <Stack.Screen name="identity-verification" options={{ headerShown: false }} />
+          <Stack.Screen name="payment-methods" options={{ headerShown: false }} />
         </Stack>
       </PaperProvider>
     </StripeProvider>

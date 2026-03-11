@@ -262,7 +262,7 @@ export default function ProfileScreen() {
             iconColor="#ea580c"
             iconBg="#fff7ed"
             label="Payment Methods"
-            onPress={() => Alert.alert('Coming Soon', 'Payment settings will be available soon')}
+            onPress={() => router.push('/payment-methods' as any)}
           />
         </View>
 
