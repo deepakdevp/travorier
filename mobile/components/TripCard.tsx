@@ -38,10 +38,12 @@ export default function TripCard({ trip, onPress }: TripCardProps) {
     .toUpperCase()
     .slice(0, 2);
 
-  // Display trust score as a rating out of 5 (trust_score is 0–100)
-  const rating = trip.traveler.trust_score != null
-    ? (trip.traveler.trust_score / 20).toFixed(1)
-    : '—';
+  // Prefer average_rating if populated; fall back to trust_score / 20; else show placeholder
+  const rating = trip.traveler.average_rating > 0
+    ? trip.traveler.average_rating.toFixed(1)
+    : trip.traveler.trust_score > 0
+      ? (trip.traveler.trust_score / 20).toFixed(1)
+      : '—';
 
   return (
     <TouchableOpacity

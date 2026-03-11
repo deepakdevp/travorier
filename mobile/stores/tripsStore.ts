@@ -12,6 +12,7 @@ export interface Trip {
     full_name: string;
     avatar_url?: string;
     trust_score: number;
+    average_rating: number;
     verified: boolean;
   };
   origin_city: string;
@@ -50,6 +51,7 @@ export interface TravelerMatch {
     full_name: string;
     avatar_url?: string;
     trust_score: number;
+    average_rating: number;
     id_verified: boolean;
   };
   agreed_weight_kg: number;
@@ -223,7 +225,7 @@ export const useTripsStore = create<TripsStore>((set, get) => ({
           flight_number, airline,
           available_weight_kg, price_per_kg,
           status, is_boosted, pnr_verified, created_at,
-          traveler:profiles!traveler_id(full_name, avatar_url, trust_score, id_verified)
+          traveler:profiles!traveler_id(full_name, avatar_url, trust_score, average_rating, id_verified)
         `)
         .eq('status', 'active')
         .order('is_boosted', { ascending: false })
@@ -241,6 +243,7 @@ export const useTripsStore = create<TripsStore>((set, get) => ({
           full_name: row.traveler?.full_name ?? 'Unknown',
           avatar_url: row.traveler?.avatar_url,
           trust_score: row.traveler?.trust_score ?? 0,
+          average_rating: row.traveler?.average_rating ?? 0,
           verified: row.traveler?.id_verified ?? false,
         },
       }));
@@ -277,7 +280,7 @@ export const useTripsStore = create<TripsStore>((set, get) => ({
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, avatar_url, trust_score, id_verified')
+        .select('full_name, avatar_url, trust_score, average_rating, id_verified')
         .eq('id', session.user.id)
         .single();
 
@@ -287,6 +290,7 @@ export const useTripsStore = create<TripsStore>((set, get) => ({
           full_name: profile?.full_name ?? 'You',
           avatar_url: profile?.avatar_url,
           trust_score: profile?.trust_score ?? 0,
+          average_rating: profile?.average_rating ?? 0,
           verified: profile?.id_verified ?? false,
         },
       }));
@@ -329,7 +333,7 @@ export const useTripsStore = create<TripsStore>((set, get) => ({
         .select(`
           id, trip_id, request_id, status, contact_unlocked,
           agreed_weight_kg, agreed_price,
-          sender:profiles!sender_id(full_name, avatar_url, trust_score, id_verified),
+          sender:profiles!sender_id(full_name, avatar_url, trust_score, average_rating, id_verified),
           request:requests!request_id(package_description, package_weight_kg, needed_by_date)
         `)
         .eq('trip_id', tripId)
@@ -345,6 +349,7 @@ export const useTripsStore = create<TripsStore>((set, get) => ({
           full_name: row.sender?.full_name ?? 'Unknown',
           avatar_url: row.sender?.avatar_url,
           trust_score: row.sender?.trust_score ?? 0,
+          average_rating: row.sender?.average_rating ?? 0,
           id_verified: row.sender?.id_verified ?? false,
         },
         agreed_weight_kg: row.agreed_weight_kg ?? 0,
