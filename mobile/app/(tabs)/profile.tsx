@@ -243,11 +243,18 @@ export default function ProfileScreen() {
             iconColor="#9333ea"
             iconBg="#f3e8ff"
             label="Identity Verification"
-            subtitle="Completed"
-            subtitleColor={colors.success}
-            onPress={() =>
-              Alert.alert('Coming Soon', 'Identity verification will be available soon')
+            subtitle={
+              profile?.id_verification_status === 'approved' ? 'Verified' :
+              profile?.id_verification_status === 'pending' ? 'Under Review' :
+              profile?.id_verification_status === 'rejected' ? 'Rejected' :
+              'Not submitted'
             }
+            subtitleColor={
+              profile?.id_verification_status === 'approved' ? colors.success :
+              profile?.id_verification_status === 'rejected' ? colors.error :
+              undefined
+            }
+            onPress={() => router.push('/identity-verification' as any)}
             showDivider
           />
           <MenuItem
