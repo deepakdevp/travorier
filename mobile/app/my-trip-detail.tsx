@@ -147,6 +147,7 @@ export default function MyTripDetailScreen() {
                   full_name: trip.traveler.full_name,
                   avatar_url: trip.traveler.avatar_url,
                   trust_score: trip.traveler.trust_score,
+                  average_rating: trip.traveler.average_rating,
                   verified: trip.traveler.verified,
                 },
                 trip: {
@@ -179,6 +180,7 @@ export default function MyTripDetailScreen() {
         full_name: trip.traveler.full_name,
         avatar_url: trip.traveler.avatar_url,
         trust_score: trip.traveler.trust_score,
+        average_rating: trip.traveler.average_rating,
         verified: trip.traveler.verified,
       },
       trip: {

@@ -29,6 +29,7 @@ export interface Match {
     full_name: string;
     avatar_url?: string;
     trust_score: number;
+    average_rating: number;
     verified: boolean;                     // aliased from id_verified in query
   };
   trip: {
@@ -150,7 +151,7 @@ export const useRequestsStore = create<RequestsStore>((set) => ({
         .from('matches')
         .select(`
           id, request_id, trip_id, status, contact_unlocked, agreed_weight_kg,
-          traveler:profiles!traveler_id(full_name, avatar_url, trust_score, id_verified),
+          traveler:profiles!traveler_id(full_name, avatar_url, trust_score, average_rating, id_verified),
           trip:trips!trip_id(origin_city, destination_city, departure_date, airline, flight_number)
         `)
         .eq('request_id', requestId)
@@ -172,6 +173,7 @@ export const useRequestsStore = create<RequestsStore>((set) => ({
           full_name: row.traveler?.full_name ?? 'Unknown',
           avatar_url: row.traveler?.avatar_url,
           trust_score: row.traveler?.trust_score ?? 0,
+          average_rating: row.traveler?.average_rating ?? 0,
           verified: row.traveler?.id_verified ?? false,
         },
         trip: {
