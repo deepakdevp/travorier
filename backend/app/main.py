@@ -9,7 +9,7 @@ import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
 from app.core.config import settings
-from app.api.v1 import auth, users, trips, requests as requests_api, matches, payments
+from app.api.v1 import auth, users, trips, requests as requests_api, matches, payments, handover
 
 
 # Initialize Sentry for error tracking (if DSN is provided)
@@ -77,6 +77,7 @@ async def root():
 # app.include_router(requests_api.router, prefix=settings.API_V1_PREFIX, tags=["Requests"])
 # app.include_router(matches.router, prefix=settings.API_V1_PREFIX, tags=["Matches"])
 app.include_router(payments.router, prefix=settings.API_V1_PREFIX, tags=["Payments"])
+app.include_router(handover.router, prefix=settings.API_V1_PREFIX, tags=["Handover"])
 
 
 # Exception handlers
