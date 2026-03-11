@@ -16,6 +16,7 @@ import { Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/stores/authStore';
 import { useCreditStore } from '@/stores/creditStore';
+import { useNotificationStore } from '@/stores/notificationStore';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { colors, spacing, radius } from '@/lib/theme';
@@ -80,9 +81,11 @@ export default function ProfileScreen() {
   const router = useRouter();
 
   const { balance, fetchBalance } = useCreditStore();
+  const { unreadCount, fetchNotifications } = useNotificationStore();
 
   useEffect(() => {
     fetchBalance();
+    fetchNotifications();
   }, []);
 
   const [avatarError, setAvatarError] = React.useState(false);
@@ -255,12 +258,12 @@ export default function ProfileScreen() {
         <View style={[styles.menuCard, styles.menuCardSpaced]}>
           <MenuItem
             icon="bell-outline"
-            iconColor="#4b5563"
-            iconBg="#f1f5f9"
+            iconColor={colors.primary}
+            iconBg={colors.primarySubtle}
             label="Notifications"
-            onPress={() =>
-              Alert.alert('Coming Soon', 'Notification settings will be available soon')
-            }
+            subtitle={unreadCount > 0 ? `${unreadCount} unread` : undefined}
+            subtitleColor={colors.primary}
+            onPress={() => router.push('/notifications')}
             showDivider
           />
           <MenuItem
