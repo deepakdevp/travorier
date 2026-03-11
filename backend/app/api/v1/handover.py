@@ -9,6 +9,7 @@ from app.schemas.handover import (
 )
 from app.services.qr_service import generate_qr_png, generate_match_qr_payload, generate_secret
 from app.services.supabase import get_supabase_admin_client
+from app.services.notification_service import create_and_send_notification
 
 router = APIRouter(prefix="/handover", tags=["Handover"])
 
@@ -41,6 +42,20 @@ async def schedule_handover(
     }).eq("id", match_id).execute()
 
     updated = result.data[0]
+
+    # Notify the other party about handover scheduling
+    other_user_id = m["sender_id"] if user_id == m["traveler_id"] else m["traveler_id"]
+    create_and_send_notification(
+        supabase,
+        user_id=other_user_id,
+        title="Handover Scheduled",
+        body=f"Pickup confirmed at {body.handover_location}",
+        notification_type="handover",
+        related_entity_type="match",
+        related_entity_id=match_id,
+        deep_link="/request-detail",
+    )
+
     return ScheduleHandoverResponse(
         match_id=match_id,
         status=updated["status"],
@@ -160,6 +175,18 @@ async def scan_qr(
         "status": "delivered",
         "delivered_at": delivered_at.isoformat(),
     }).eq("id", match_id).execute()
+
+    # Notify sender that package was delivered
+    create_and_send_notification(
+        supabase,
+        user_id=m["sender_id"],
+        title="Package Delivered! 🎉",
+        body="Your package has been successfully delivered.",
+        notification_type="handover",
+        related_entity_type="match",
+        related_entity_id=match_id,
+        deep_link="/request-detail",
+    )
 
     return ScanQRResponse(
         success=True,
