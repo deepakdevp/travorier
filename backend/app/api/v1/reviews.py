@@ -1,5 +1,5 @@
 # backend/app/api/v1/reviews.py
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
@@ -31,6 +31,7 @@ class ReviewItem(BaseModel):
 @router.post("", status_code=201)
 async def submit_review(
     body: SubmitReviewRequest,
+    background_tasks: BackgroundTasks,
     current_user=Depends(get_current_user),
 ) -> ReviewItem:
     """Submit a review for a delivered match. Both traveler and sender can review each other."""
@@ -80,8 +81,9 @@ async def submit_review(
             raise HTTPException(status_code=409, detail="You have already reviewed this match")
         raise HTTPException(status_code=500, detail="Failed to submit review")
 
-    # Notify reviewee (fire-and-forget, never raises)
-    create_and_send_notification(
+    # Notify reviewee after response is sent (fire-and-forget)
+    background_tasks.add_task(
+        create_and_send_notification,
         supabase,
         user_id=reviewee_id,
         title="You received a review! ⭐",
