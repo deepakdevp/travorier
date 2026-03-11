@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from app.core.dependencies import get_current_user
 from app.services.supabase import get_supabase_admin_client
 
@@ -55,6 +55,7 @@ async def mark_all_read(
 
     supabase.table("notifications").update({
         "read": True,
+        "read_at": datetime.now(timezone.utc).isoformat(),
     }).eq("user_id", user_id).eq("read", False).execute()
 
     return {"success": True}
@@ -71,6 +72,7 @@ async def mark_read(
 
     supabase.table("notifications").update({
         "read": True,
+        "read_at": datetime.now(timezone.utc).isoformat(),
     }).eq("id", notification_id).eq("user_id", user_id).execute()
 
     return {"success": True}
