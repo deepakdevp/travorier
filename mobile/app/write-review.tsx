@@ -82,7 +82,7 @@ export default function WriteReviewScreen() {
           {/* Reviewee name */}
           <View style={styles.section}>
             <Text style={styles.forLabel}>Your review for</Text>
-            <Text style={styles.revieweeName}>{revieweeName}</Text>
+            <Text style={styles.revieweeName}>{revieweeName ?? 'this delivery'}</Text>
           </View>
 
           {/* Star selector */}
