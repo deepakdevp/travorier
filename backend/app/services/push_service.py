@@ -42,7 +42,7 @@ def send_push(token: str, title: str, body: str, data: dict | None = None) -> bo
         if status == "ok":
             return True
         else:
-            logger.warning("send_push: Expo returned non-ok status: %s", result)
+            logger.warning("send_push: Expo returned non-ok status (HTTP %s): %s", response.status_code, result)
             return False
     except Exception as e:
         logger.error("send_push: failed to send push: %s", e)
@@ -57,12 +57,23 @@ def send_push_batch(messages: list[dict]) -> None:
     """
     if not messages:
         return
+
+    # Filter invalid tokens
+    valid = [m for m in messages if m.get("to", "").startswith("ExponentPushToken[")]
+    if not valid:
+        logger.warning("send_push_batch: no valid Expo push tokens in batch")
+        return
+
     try:
-        httpx.post(
+        response = httpx.post(
             EXPO_PUSH_URL,
-            json=messages,
+            json=valid,
             headers={"Accept": "application/json", "Content-Type": "application/json"},
             timeout=10.0,
         )
+        result = response.json()
+        for item in result.get("data", []):
+            if item.get("status") != "ok":
+                logger.warning("send_push_batch: delivery error: %s", item)
     except Exception as e:
         logger.error("send_push_batch: %s", e)
