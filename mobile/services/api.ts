@@ -126,6 +126,14 @@ class ApiClient {
     markAllRead: () =>
       this.client.patch('/api/v1/notifications/read-all', {}),
   };
+
+  // Review endpoints
+  reviews = {
+    submit: (data: { match_id: string; rating: number; review_text?: string }) =>
+      this.client.post('/api/v1/reviews', data),
+    forUser: (userId: string) =>
+      this.client.get(`/api/v1/reviews/user/${userId}`),
+  };
 }
 
 export const api = new ApiClient();

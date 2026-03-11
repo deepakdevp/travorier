@@ -52,6 +52,7 @@ export default function RootLayout() {
           <Stack.Screen name="handover" options={{ headerShown: false }} />
           <Stack.Screen name="inspection" options={{ headerShown: false }} />
           <Stack.Screen name="notifications" options={{ headerShown: false }} />
+          <Stack.Screen name="write-review" options={{ headerShown: false }} />
         </Stack>
       </PaperProvider>
     </StripeProvider>
