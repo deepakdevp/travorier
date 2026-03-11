@@ -1,6 +1,7 @@
 /**
  * Root layout component for Expo Router
  */
+import * as Sentry from 'sentry-expo';
 import { useEffect, useRef } from 'react';
 import { Stack, router } from 'expo-router';
 import { PaperProvider } from 'react-native-paper';
@@ -8,6 +9,12 @@ import { StripeProvider } from '@stripe/stripe-react-native';
 import * as Notifications from 'expo-notifications';
 import { useAuthStore } from '@/stores/authStore';
 import { AppTheme } from '@/lib/theme';
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
+  enableInExpoDevelopment: false,
+  debug: false,
+});
 
 export default function RootLayout() {
   const initialize = useAuthStore((state) => state.initialize);

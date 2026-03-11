@@ -58,6 +58,13 @@
           "icon": "./assets/notification-icon.png",
           "color": "#ffffff"
         }
+      ],
+      [
+        "sentry-expo",
+        {
+          "organization": "travorier",
+          "project": "travorier-mobile"
+        }
       ]
     ],
     "scheme": "travorier",
