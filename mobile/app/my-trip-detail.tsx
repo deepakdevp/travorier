@@ -43,6 +43,12 @@ function MatchRequestCard({
                 <MaterialCommunityIcons name="check-decagram" size={16} color={colors.primary} />
               )}
             </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 }}>
+              <MaterialCommunityIcons name="star" size={11} color={colors.star} />
+              <Text style={styles.senderRating}>
+                {match.sender.average_rating > 0 ? match.sender.average_rating.toFixed(1) : '—'}
+              </Text>
+            </View>
             <View style={styles.trustRow}>
               <MaterialCommunityIcons name="star" size={13} color={colors.star} />
               <Text variant="bodySmall" style={styles.trustText}>Trust: {match.sender.trust_score}</Text>
@@ -318,6 +324,10 @@ const styles = StyleSheet.create({
   senderName: { fontWeight: 'bold', color: colors.textPrimary },
   trustRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   trustText: { color: colors.textSecondary },
+  senderRating: {
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
   divider: { marginBottom: spacing.sm },
   packageDesc: { color: colors.textSecondary, marginBottom: spacing.sm },
   cardActions: { justifyContent: 'flex-end', gap: spacing.sm, paddingHorizontal: spacing.md, paddingBottom: spacing.md },

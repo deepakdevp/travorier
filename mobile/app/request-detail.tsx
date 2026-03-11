@@ -126,6 +126,12 @@ function MatchCard({
               </View>
             )}
           </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 }}>
+            <MaterialCommunityIcons name="star" size={11} color={colors.star} />
+            <Text style={styles.travelerRating}>
+              {match.traveler.average_rating > 0 ? match.traveler.average_rating.toFixed(1) : '—'}
+            </Text>
+          </View>
           <Text style={styles.matchFlying}>Flying {departureDate}</Text>
           <Text style={styles.matchLuggage}>
             {match.trip.airline
@@ -914,6 +920,10 @@ const styles = StyleSheet.create({
   },
   matchLuggage: {
     fontSize: 13,
+    color: colors.textSecondary,
+  },
+  travelerRating: {
+    fontSize: 11,
     color: colors.textSecondary,
   },
 
