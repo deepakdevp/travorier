@@ -91,7 +91,7 @@ class ApiClient {
     generateQR: (id: string) => this.client.post(`/api/v1/handover/matches/${id}/qr`, {}),
     getQR: (id: string) => this.client.get(`/api/v1/handover/matches/${id}/qr`),
     scanQR: (id: string, qrCode: string) =>
-      this.client.post(`/api/v1/matches/${id}/scan-qr`, { qrCode }),
+      this.client.post(`/api/v1/handover/matches/${id}/scan-qr`, { qr_payload: qrCode }),
   };
 
   // Payment endpoints

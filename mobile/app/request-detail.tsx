@@ -56,9 +56,11 @@ const STATUS_LABEL: Record<string, string> = {
 function MatchCard({
   match,
   onAccept,
+  onScanQR,
 }: {
   match: Match;
   onAccept: (match: Match) => void;
+  onScanQR: () => void;
 }) {
   // Preserve existing initials computation exactly
   const initials = match.traveler.full_name
@@ -151,6 +153,16 @@ function MatchCard({
           )}
         </View>
       </View>
+      {match.status === 'in_transit' && (
+        <TouchableOpacity
+          style={styles.scanBtn}
+          onPress={onScanQR}
+          activeOpacity={0.85}
+        >
+          <MaterialCommunityIcons name="qrcode" size={16} color={colors.white} />
+          <Text style={styles.scanBtnText}>Confirm Delivery</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -374,7 +386,12 @@ export default function RequestDetailScreen() {
             </View>
           ) : (
             matches.map((match: Match) => (
-              <MatchCard key={match.id} match={match} onAccept={handleAcceptMatch} />
+              <MatchCard
+                key={match.id}
+                match={match}
+                onAccept={handleAcceptMatch}
+                onScanQR={() => router.push(`/qr-scanner?matchId=${match.id}`)}
+              />
             ))
           )}
         </View>
@@ -905,6 +922,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: colors.textSecondary,
+  },
+
+  // ---- Confirm Delivery (QR scan) button ----
+  scanBtn: {
+    backgroundColor: colors.success,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  scanBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.surface,
   },
 
   // ---- Empty state ----

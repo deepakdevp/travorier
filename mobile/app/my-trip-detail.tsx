@@ -2,23 +2,25 @@
  * My Trip Detail Screen
  * Shows trip info and incoming match requests (traveler match inbox)
  */
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { Text, Card, Avatar, Button, Chip, Surface, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useTripsStore, TravelerMatch } from '@/stores/tripsStore';
-import { useRequestsStore } from '@/stores/requestsStore';
+import { useRequestsStore, Match } from '@/stores/requestsStore';
 import { colors, spacing, radius } from '@/lib/theme';
 
 function MatchRequestCard({
   match,
   onAccept,
   onDecline,
+  onHandover,
 }: {
   match: TravelerMatch;
   onAccept: (m: TravelerMatch) => void;
   onDecline: (m: TravelerMatch) => void;
+  onHandover: (m: TravelerMatch) => void;
 }) {
   const initials = match.sender.full_name
     .split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -88,6 +90,15 @@ function MatchRequestCard({
           Accept &amp; Chat
         </Button>
       </Card.Actions>
+      {(match.status === 'agreed' || match.status === 'handover_scheduled') && (
+        <TouchableOpacity
+          style={styles.handoverBtn}
+          onPress={() => onHandover(match)}
+        >
+          <MaterialCommunityIcons name="qrcode" size={16} color={colors.surface} />
+          <Text style={styles.handoverBtnText}>Handover Package</Text>
+        </TouchableOpacity>
+      )}
     </Card>
   );
 }
@@ -145,6 +156,31 @@ export default function MyTripDetailScreen() {
         },
       ]
     );
+  };
+
+  const handleHandover = (match: TravelerMatch) => {
+    setSelectedMatch({
+      id: match.id,
+      request_id: match.request_id,
+      trip_id: match.trip_id,
+      traveler: {
+        full_name: trip.traveler.full_name,
+        avatar_url: trip.traveler.avatar_url,
+        trust_score: trip.traveler.trust_score,
+        verified: trip.traveler.verified,
+      },
+      trip: {
+        origin_city: trip.origin_city,
+        destination_city: trip.destination_city,
+        departure_date: trip.departure_date,
+        airline: trip.airline,
+        flight_number: trip.flight_number,
+      },
+      agreed_weight_kg: match.agreed_weight_kg,
+      status: match.status as Match['status'],
+      contact_unlocked: match.contact_unlocked,
+    });
+    router.push('/handover');
   };
 
   const handleDecline = async (match: TravelerMatch) => {
@@ -227,6 +263,7 @@ export default function MyTripDetailScreen() {
             match={match}
             onAccept={handleAccept}
             onDecline={handleDecline}
+            onHandover={handleHandover}
           />
         ))}
       </View>
@@ -262,6 +299,23 @@ const styles = StyleSheet.create({
   packageDesc: { color: colors.textSecondary, marginBottom: spacing.sm },
   cardActions: { justifyContent: 'flex-end', gap: spacing.sm, paddingHorizontal: spacing.md, paddingBottom: spacing.md },
   actionButton: { flex: 1 },
+  handoverBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  handoverBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.surface,
+  },
   emptyCard: { backgroundColor: colors.surface },
   emptyContent: { alignItems: 'center', paddingVertical: 32 },
   emptyText: { textAlign: 'center', color: colors.textDisabled, marginTop: spacing.md },
