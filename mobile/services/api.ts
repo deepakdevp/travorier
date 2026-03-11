@@ -86,7 +86,10 @@ class ApiClient {
     list: () => this.client.get('/api/v1/matches'),
     getById: (id: string) => this.client.get(`/api/v1/matches/${id}`),
     unlock: (id: string) => this.client.post(`/api/v1/matches/${id}/unlock`),
-    generateQR: (id: string) => this.client.post(`/api/v1/matches/${id}/qr`),
+    scheduleHandover: (id: string, data: { handover_location: string; handover_time: string }) =>
+      this.client.patch(`/api/v1/handover/matches/${id}/schedule`, data),
+    generateQR: (id: string) => this.client.post(`/api/v1/handover/matches/${id}/qr`, {}),
+    getQR: (id: string) => this.client.get(`/api/v1/handover/matches/${id}/qr`),
     scanQR: (id: string, qrCode: string) =>
       this.client.post(`/api/v1/matches/${id}/scan-qr`, { qrCode }),
   };
