@@ -104,6 +104,16 @@ class ApiClient {
     getPacks: () => this.client.get('/api/v1/payments/packs'),
     getTransactions: () => this.client.get('/api/v1/payments/transactions'),
   };
+
+  // Handover endpoints
+  handover = {
+    createInspection: (data: { match_id: string; media_urls: string[]; media_type: string; notes?: string }) =>
+      this.client.post('/api/v1/handover/inspections', data),
+    getInspections: (matchId: string) =>
+      this.client.get(`/api/v1/handover/inspections/${matchId}`),
+    scanQR: (matchId: string, qr_payload: string) =>
+      this.client.post(`/api/v1/handover/matches/${matchId}/scan-qr`, { qr_payload }),
+  };
 }
 
 export const api = new ApiClient();
