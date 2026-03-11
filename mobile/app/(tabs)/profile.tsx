@@ -77,7 +77,7 @@ function MenuItem({
 // ---------------------------------------------------------------------------
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { user, signOut } = useAuthStore();
+  const { user, profile, signOut } = useAuthStore();
   const router = useRouter();
 
   const { balance, fetchBalance } = useCreditStore();
@@ -172,17 +172,19 @@ export default function ProfileScreen() {
           <Text style={styles.profileEmail}>{userEmail}</Text>
 
           {/* Verified Traveler pill */}
-          <View style={styles.verifiedPill}>
-            <MaterialCommunityIcons name="shield-check" size={14} color="#15803d" />
-            <Text style={styles.verifiedPillText}>Verified Traveler</Text>
-          </View>
+          {profile?.id_verified && (
+            <View style={styles.verifiedPill}>
+              <MaterialCommunityIcons name="shield-check" size={14} color="#15803d" />
+              <Text style={styles.verifiedPillText}>Verified Traveler</Text>
+            </View>
+          )}
         </View>
 
         {/* ── Stats Card ── */}
         <View style={styles.statsCard}>
           {/* Trust Score */}
           <View style={styles.statColumn}>
-            <Text style={[styles.statValue, { color: colors.primary }]}>0</Text>
+            <Text style={[styles.statValue, { color: colors.primary }]}>{profile?.trust_score ?? 0}</Text>
             <Text style={styles.statLabel}>Trust Score</Text>
           </View>
 
@@ -190,16 +192,21 @@ export default function ProfileScreen() {
 
           {/* Trips */}
           <View style={styles.statColumn}>
-            <Text style={styles.statValue}>0</Text>
+            <Text style={styles.statValue}>{profile?.total_deliveries ?? 0}</Text>
             <Text style={styles.statLabel}>Trips</Text>
           </View>
 
           <View style={styles.statDivider} />
 
-          {/* Delivered */}
+          {/* Rating */}
           <View style={styles.statColumn}>
-            <Text style={styles.statValue}>0kg</Text>
-            <Text style={styles.statLabel}>Delivered</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+              <MaterialCommunityIcons name="star" size={16} color={colors.star} />
+              <Text style={styles.statValue}>
+                {profile?.average_rating ? profile.average_rating.toFixed(1) : '—'}
+              </Text>
+            </View>
+            <Text style={styles.statLabel}>Rating</Text>
           </View>
         </View>
 
@@ -228,9 +235,7 @@ export default function ProfileScreen() {
             iconColor="#2563eb"
             iconBg="#dbeafe"
             label="Edit Profile"
-            onPress={() =>
-              Alert.alert('Coming Soon', 'Profile editing will be available in Milestone 5')
-            }
+            onPress={() => router.push('/edit-profile' as any)}
             showDivider
           />
           <MenuItem
