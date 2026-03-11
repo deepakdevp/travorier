@@ -16,11 +16,13 @@ function MatchRequestCard({
   onAccept,
   onDecline,
   onHandover,
+  onReview,
 }: {
   match: TravelerMatch;
   onAccept: (m: TravelerMatch) => void;
   onDecline: (m: TravelerMatch) => void;
   onHandover: (m: TravelerMatch) => void;
+  onReview: () => void;
 }) {
   const initials = match.sender.full_name
     .split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -97,6 +99,16 @@ function MatchRequestCard({
         >
           <MaterialCommunityIcons name="qrcode" size={16} color={colors.surface} />
           <Text style={styles.handoverBtnText}>Handover Package</Text>
+        </TouchableOpacity>
+      )}
+      {match.status === 'delivered' && (
+        <TouchableOpacity
+          style={styles.reviewBtn}
+          onPress={onReview}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons name="star-outline" size={16} color={colors.surface} />
+          <Text style={styles.reviewBtnText}>Leave a Review</Text>
         </TouchableOpacity>
       )}
     </Card>
@@ -264,6 +276,15 @@ export default function MyTripDetailScreen() {
             onAccept={handleAccept}
             onDecline={handleDecline}
             onHandover={handleHandover}
+            onReview={() => {
+              router.push({
+                pathname: '/write-review',
+                params: {
+                  matchId: match.id,
+                  revieweeName: match.sender?.full_name ?? 'Sender',
+                },
+              } as any);
+            }}
           />
         ))}
       </View>
@@ -314,6 +335,23 @@ const styles = StyleSheet.create({
   handoverBtnText: {
     fontSize: 13,
     fontWeight: '600',
+    color: colors.surface,
+  },
+  reviewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    padding: spacing.sm,
+    backgroundColor: colors.star,
+    borderRadius: radius.md,
+    marginTop: spacing.sm,
+    marginHorizontal: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  reviewBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
     color: colors.surface,
   },
   emptyCard: { backgroundColor: colors.surface },

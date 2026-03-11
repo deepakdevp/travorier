@@ -57,10 +57,12 @@ function MatchCard({
   match,
   onAccept,
   onScanQR,
+  onReview,
 }: {
   match: Match;
   onAccept: (match: Match) => void;
   onScanQR: () => void;
+  onReview: () => void;
 }) {
   // Preserve existing initials computation exactly
   const initials = match.traveler.full_name
@@ -161,6 +163,16 @@ function MatchCard({
         >
           <MaterialCommunityIcons name="qrcode" size={16} color={colors.white} />
           <Text style={styles.scanBtnText}>Confirm Delivery</Text>
+        </TouchableOpacity>
+      )}
+      {match.status === 'delivered' && (
+        <TouchableOpacity
+          style={styles.reviewBtn}
+          onPress={onReview}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons name="star-outline" size={16} color={colors.surface} />
+          <Text style={styles.reviewBtnText}>Leave a Review</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -391,6 +403,15 @@ export default function RequestDetailScreen() {
                 match={match}
                 onAccept={handleAcceptMatch}
                 onScanQR={() => router.push(`/qr-scanner?matchId=${match.id}`)}
+                onReview={() => {
+                  router.push({
+                    pathname: '/write-review',
+                    params: {
+                      matchId: match.id,
+                      revieweeName: match.traveler?.full_name ?? 'Traveler',
+                    },
+                  } as any);
+                }}
               />
             ))
           )}
@@ -938,6 +959,23 @@ const styles = StyleSheet.create({
   scanBtnText: {
     fontSize: 13,
     fontWeight: '600',
+    color: colors.surface,
+  },
+
+  // ---- Leave a Review button ----
+  reviewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.star,
+    borderBottomLeftRadius: radius.xl,
+    borderBottomRightRadius: radius.xl,
+  },
+  reviewBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
     color: colors.surface,
   },
 
