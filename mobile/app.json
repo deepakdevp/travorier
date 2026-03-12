@@ -18,8 +18,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.travorier.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "We need camera access to take photos of packages during physical inspection.",
-        "NSPhotoLibraryUsageDescription": "We need photo library access to upload package inspection photos."
+        "NSCameraUsageDescription": "Allow Travorier to scan QR codes for delivery confirmation",
+        "NSPhotoLibraryUsageDescription": "We need photo library access to upload package inspection photos.",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone"
       }
     },
     "android": {
@@ -31,7 +32,9 @@
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "WRITE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -69,9 +72,13 @@
     ],
     "scheme": "travorier",
     "extra": {
+      "router": {
+        "origin": false
+      },
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "8dd2d640-5df9-43f2-911d-356490050502"
       }
-    }
+    },
+    "owner": "deepakdev_21"
   }
 }
