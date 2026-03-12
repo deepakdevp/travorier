@@ -1,0 +1,17 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+.env.*
+*.egg-info/
+dist/
+build/
+.git/
+.gitignore
+tests/
+*.md
+firebase-credentials.json
+google-play-service-account.json
