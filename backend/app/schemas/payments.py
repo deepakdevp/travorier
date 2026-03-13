@@ -44,3 +44,30 @@ class TransactionItem(BaseModel):
     credits_used: Optional[int] = None
     payment_status: str
     created_at: datetime
+
+
+# --- Razorpay schemas ---
+
+class RazorpayOrderRequest(BaseModel):
+    pack_id: str
+
+
+class RazorpayOrderResponse(BaseModel):
+    order_id: str
+    amount: int          # in paise
+    currency: str        # "INR"
+    key_id: str          # RAZORPAY_KEY_ID — needed by mobile SDK
+    pack: CreditPackSchema
+
+
+class RazorpayVerifyRequest(BaseModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
+    pack_id: str
+
+
+class RazorpayVerifyResponse(BaseModel):
+    success: bool
+    credits_added: int
+    new_balance: int
