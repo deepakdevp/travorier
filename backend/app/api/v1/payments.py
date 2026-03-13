@@ -9,6 +9,8 @@ from app.schemas.payments import (
     CreateIntentRequest, CreateIntentResponse, CreditPackSchema,
     ConfirmPaymentRequest, ConfirmPaymentResponse,
     CreditsResponse, TransactionItem,
+    RazorpayOrderRequest, RazorpayOrderResponse,
+    RazorpayVerifyRequest, RazorpayVerifyResponse,
 )
 from app.services.stripe_service import (
     CREDIT_PACKS, get_pack,
@@ -19,10 +21,6 @@ from app.services.razorpay_service import (
     create_order as razorpay_create_order,
     verify_signature as razorpay_verify_signature,
     verify_webhook_signature as razorpay_verify_webhook,
-)
-from app.schemas.payments import (
-    RazorpayOrderRequest, RazorpayOrderResponse,
-    RazorpayVerifyRequest, RazorpayVerifyResponse,
 )
 from app.core.config import settings
 
