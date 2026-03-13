@@ -7,7 +7,7 @@ import hmac
 import hashlib
 import razorpay
 from app.core.config import settings
-from app.services.stripe_service import CREDIT_PACKS, get_pack  # reuse pack definitions
+from app.services.stripe_service import get_pack  # reuse pack definitions
 
 
 def _client() -> razorpay.Client:

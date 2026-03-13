@@ -11,6 +11,12 @@ def test_create_order_returns_order_id():
         from app.services.razorpay_service import create_order
         result = create_order("pack_5", "user_123")
         assert result["id"] == "order_abc123"
+        MockClient.return_value.order.create.assert_called_once_with({
+            "amount": 24900,
+            "currency": "INR",
+            "receipt": "user_123_pack_5",
+            "notes": {"user_id": "user_123", "pack_id": "pack_5", "credits": "5"},
+        })
 
 
 def test_verify_signature_valid():
