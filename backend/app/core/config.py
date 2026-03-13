@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     STRIPE_PUBLISHABLE_KEY: str = Field(..., description="Stripe publishable key")
     STRIPE_WEBHOOK_SECRET: str = Field(..., description="Stripe webhook secret")
 
+    # Razorpay
+    RAZORPAY_KEY_ID: str = Field(default="", description="Razorpay Key ID")
+    RAZORPAY_KEY_SECRET: str = Field(default="", description="Razorpay Key Secret")
+    RAZORPAY_WEBHOOK_SECRET: str = Field(default="", description="Razorpay webhook secret")
+
     # Firebase
     FIREBASE_CREDENTIALS_PATH: str = Field(
         default="./firebase-credentials.json",

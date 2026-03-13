@@ -20,6 +20,9 @@ python-multipart==0.0.9
 # Stripe Payments
 stripe==8.2.0
 
+# Razorpay Payments
+razorpay==1.4.1
+
 # Firebase Admin (for FCM)
 firebase-admin==6.4.0
 
