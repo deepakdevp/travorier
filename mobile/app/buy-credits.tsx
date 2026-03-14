@@ -1,4 +1,3 @@
-// @ts-ignore — react-native-razorpay has no bundled types
 import RazorpayCheckout from 'react-native-razorpay';
 import React, { useEffect, useState } from 'react';
 import {
@@ -62,14 +61,10 @@ export default function BuyCreditsScreen() {
         order_id,
         name: 'Travorier',
         prefill: {},
-        theme: { color: '#136dec' },
+        theme: { color: colors.primary },
       };
 
-      const paymentData = await RazorpayCheckout.open(options) as {
-        razorpay_payment_id: string;
-        razorpay_order_id: string;
-        razorpay_signature: string;
-      };
+      const paymentData = await RazorpayCheckout.open(options);
 
       // 3. Verify on backend and add credits
       const { newBalance } = await purchaseWithRazorpay(
@@ -85,9 +80,10 @@ export default function BuyCreditsScreen() {
         [{ text: 'OK', onPress: () => router.back() }],
       );
     } catch (err: any) {
-      // User cancelled Razorpay checkout — don't show error
-      if (err?.code === 'PAYMENT_CANCELLED') return;
-      Alert.alert('Payment Failed', err.message || 'Something went wrong');
+      // User cancelled — code 0 from native SDK, or description contains 'cancel'
+      const desc: string = err?.description ?? err?.message ?? '';
+      if (err?.code === 0 || desc.toLowerCase().includes('cancel')) return;
+      Alert.alert('Payment Failed', desc || 'Something went wrong');
     } finally {
       setPurchasing(false);
     }
