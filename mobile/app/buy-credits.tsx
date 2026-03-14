@@ -1,3 +1,5 @@
+// @ts-ignore — react-native-razorpay has no bundled types
+import RazorpayCheckout from 'react-native-razorpay';
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator,
@@ -19,7 +21,7 @@ interface CreditPack {
 
 export default function BuyCreditsScreen() {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
-  const { balance, purchaseCredits, fetchBalance } = useCreditStore();
+  const { balance, purchaseCredits, fetchBalance, purchaseWithRazorpay } = useCreditStore();
   const [packs, setPacks] = useState<CreditPack[]>([]);
   const [selectedPack, setSelectedPack] = useState<CreditPack | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,7 +45,55 @@ export default function BuyCreditsScreen() {
     }
   };
 
-  const handlePurchase = async () => {
+  const handlePurchaseRazorpay = async () => {
+    if (!selectedPack) return;
+    setPurchasing(true);
+    try {
+      // 1. Create Razorpay order on backend
+      const orderRes = await api.payments.razorpayCreateOrder({ pack_id: selectedPack.id });
+      const { order_id, amount, currency, key_id } = orderRes.data;
+
+      // 2. Open Razorpay checkout (handles UPI, NetBanking, Cards, Wallets natively)
+      const options = {
+        description: `${selectedPack.credits} Travorier Credits`,
+        currency,
+        key: key_id,
+        amount: String(amount),
+        order_id,
+        name: 'Travorier',
+        prefill: {},
+        theme: { color: '#136dec' },
+      };
+
+      const paymentData = await RazorpayCheckout.open(options) as {
+        razorpay_payment_id: string;
+        razorpay_order_id: string;
+        razorpay_signature: string;
+      };
+
+      // 3. Verify on backend and add credits
+      const { newBalance } = await purchaseWithRazorpay(
+        selectedPack.id,
+        paymentData.razorpay_payment_id,
+        paymentData.razorpay_order_id,
+        paymentData.razorpay_signature,
+      );
+
+      Alert.alert(
+        'Credits Added!',
+        `${selectedPack.credits} credits added. New balance: ${newBalance}`,
+        [{ text: 'OK', onPress: () => router.back() }],
+      );
+    } catch (err: any) {
+      // User cancelled Razorpay checkout — don't show error
+      if (err?.code === 'PAYMENT_CANCELLED') return;
+      Alert.alert('Payment Failed', err.message || 'Something went wrong');
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  const handlePurchaseStripe = async () => {
     if (!selectedPack) return;
     setPurchasing(true);
     try {
@@ -170,9 +220,10 @@ export default function BuyCreditsScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
+        {/* Primary: Razorpay (UPI / Cards / NetBanking / Wallets) */}
         <TouchableOpacity
           style={[styles.buyButton, (!selectedPack || purchasing) && styles.buyButtonDisabled]}
-          onPress={handlePurchase}
+          onPress={handlePurchaseRazorpay}
           disabled={!selectedPack || purchasing}
         >
           {purchasing ? (
@@ -181,12 +232,22 @@ export default function BuyCreditsScreen() {
             <>
               <MaterialCommunityIcons name="lightning-bolt" size={20} color={colors.surface} />
               <Text style={styles.buyButtonText}>
-                Pay {selectedPack ? formatPrice(selectedPack.amount_paise) : ''}
+                Pay {selectedPack ? formatPrice(selectedPack.amount_paise) : ''} · UPI / Card / NetBanking
               </Text>
             </>
           )}
         </TouchableOpacity>
-        <Text style={styles.secureNote}>Secured by Stripe</Text>
+
+        {/* Fallback: Stripe (international cards) */}
+        <TouchableOpacity
+          style={[styles.stripeButton, (!selectedPack || purchasing) && styles.buyButtonDisabled]}
+          onPress={handlePurchaseStripe}
+          disabled={!selectedPack || purchasing}
+        >
+          <Text style={styles.stripeButtonText}>Pay with international card (Stripe)</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.secureNote}>Secured by Razorpay · Stripe</Text>
       </View>
     </SafeAreaView>
   );
@@ -251,4 +312,16 @@ const styles = StyleSheet.create({
   buyButtonDisabled: { backgroundColor: colors.border },
   buyButtonText: { fontSize: 16, fontWeight: '700', color: colors.surface },
   secureNote: { fontSize: 12, color: colors.textDisabled, textAlign: 'center' },
+  stripeButton: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center' as const,
+  },
+  stripeButtonText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
 });
