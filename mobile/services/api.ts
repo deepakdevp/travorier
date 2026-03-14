@@ -103,6 +103,14 @@ class ApiClient {
     getCredits: () => this.client.get('/api/v1/payments/credits'),
     getPacks: () => this.client.get('/api/v1/payments/packs'),
     getTransactions: () => this.client.get('/api/v1/payments/transactions'),
+    razorpayCreateOrder: (data: { pack_id: string }) =>
+      this.client.post('/api/v1/payments/razorpay/create-order', data),
+    razorpayVerify: (data: {
+      razorpay_order_id: string;
+      razorpay_payment_id: string;
+      razorpay_signature: string;
+      pack_id: string;
+    }) => this.client.post('/api/v1/payments/razorpay/verify', data),
   };
 
   // Handover endpoints

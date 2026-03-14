@@ -10,6 +10,7 @@ interface CreditStore {
   error: string | null;
   fetchBalance: () => Promise<void>;
   purchaseCredits: (packId: string, paymentIntentId: string) => Promise<{ success: boolean; newBalance: number }>;
+  purchaseWithRazorpay: (packId: string, paymentId: string, orderId: string, signature: string) => Promise<{ success: boolean; newBalance: number }>;
   deductCredit: (amount?: number) => void;
 }
 
@@ -36,6 +37,22 @@ export const useCreditStore = create<CreditStore>((set) => ({
       return { success: true, newBalance };
     } catch (err: any) {
       throw new Error(err?.response?.data?.detail || 'Payment confirmation failed');
+    }
+  },
+
+  purchaseWithRazorpay: async (packId, paymentId, orderId, signature) => {
+    try {
+      const res = await api.payments.razorpayVerify({
+        razorpay_order_id: orderId,
+        razorpay_payment_id: paymentId,
+        razorpay_signature: signature,
+        pack_id: packId,
+      });
+      const newBalance = res.data.new_balance;
+      set({ balance: newBalance });
+      return { success: true, newBalance };
+    } catch (err: any) {
+      throw new Error(err?.response?.data?.detail || 'Payment verification failed');
     }
   },
 
