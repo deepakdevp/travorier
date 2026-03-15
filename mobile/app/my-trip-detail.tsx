@@ -5,8 +5,8 @@
 import { View, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { Text, Card, Avatar, Button, Chip, Surface, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useEffect } from 'react';
-import { useRouter } from 'expo-router';
+import { useEffect, useCallback } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useTripsStore, TravelerMatch } from '@/stores/tripsStore';
 import { useRequestsStore, Match } from '@/stores/requestsStore';
 import { colors, spacing, radius } from '@/lib/theme';
@@ -130,6 +130,14 @@ export default function MyTripDetailScreen() {
     if (!selectedMyTrip) { router.back(); return; }
     fetchTripMatches(selectedMyTrip.id);
   }, [selectedMyTrip?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (selectedMyTrip?.id) {
+        fetchTripMatches(selectedMyTrip.id);
+      }
+    }, [selectedMyTrip?.id])
+  );
 
   if (!selectedMyTrip) return null;
   const trip = selectedMyTrip;
