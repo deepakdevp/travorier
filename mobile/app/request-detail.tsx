@@ -21,8 +21,8 @@ import {
   Portal,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'expo-router';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRequestsStore, Match } from '@/stores/requestsStore';
 import { useCreditStore } from '@/stores/creditStore';
@@ -208,6 +208,14 @@ export default function RequestDetailScreen() {
       fetchMatchesForRequest(selectedRequest.id);
     }
   }, [selectedRequest]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (selectedRequest?.id) {
+        fetchMatchesForRequest(selectedRequest.id);
+      }
+    }, [selectedRequest?.id])
+  );
 
   if (!selectedRequest) {
     return null;
