@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useStripe } from '@stripe/stripe-react-native';
+// import { useStripe } from '@stripe/stripe-react-native'; // Stripe halted — Razorpay only
 import { colors, spacing, radius } from '@/lib/theme';
 import { api } from '@/services/api';
 import { useCreditStore } from '@/stores/creditStore';
@@ -19,8 +19,8 @@ interface CreditPack {
 }
 
 export default function BuyCreditsScreen() {
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
-  const { balance, purchaseCredits, fetchBalance, purchaseWithRazorpay } = useCreditStore();
+  // const { initPaymentSheet, presentPaymentSheet } = useStripe(); // Stripe halted
+  const { balance, /* purchaseCredits, */ fetchBalance, purchaseWithRazorpay } = useCreditStore();
   const [packs, setPacks] = useState<CreditPack[]>([]);
   const [selectedPack, setSelectedPack] = useState<CreditPack | null>(null);
   const [loading, setLoading] = useState(false);
@@ -89,44 +89,32 @@ export default function BuyCreditsScreen() {
     }
   };
 
-  const handlePurchaseStripe = async () => {
-    if (!selectedPack) return;
-    setPurchasing(true);
-    try {
-      // 1. Create payment intent on backend
-      const intentRes = await api.payments.createIntent({ pack_id: selectedPack.id });
-      const { client_secret, payment_intent_id } = intentRes.data;
-
-      // 2. Init Stripe PaymentSheet
-      const { error: initError } = await initPaymentSheet({
-        paymentIntentClientSecret: client_secret,
-        merchantDisplayName: 'Travorier',
-        defaultBillingDetails: {},
-      });
-      if (initError) throw new Error(initError.message);
-
-      // 3. Present PaymentSheet
-      const { error: presentError } = await presentPaymentSheet();
-      if (presentError) {
-        if (presentError.code !== 'Canceled') {
-          Alert.alert('Payment Failed', presentError.message);
-        }
-        return;
-      }
-
-      // 4. Confirm with backend (adds credits)
-      const { newBalance } = await purchaseCredits(selectedPack.id, payment_intent_id);
-      Alert.alert(
-        'Credits Added!',
-        `${selectedPack.credits} credits added. New balance: ${newBalance}`,
-        [{ text: 'OK', onPress: () => router.back() }],
-      );
-    } catch (err: any) {
-      Alert.alert('Error', err.message || 'Something went wrong');
-    } finally {
-      setPurchasing(false);
-    }
-  };
+  // Stripe halted — re-enable when needed for international cards
+  // const handlePurchaseStripe = async () => {
+  //   if (!selectedPack) return;
+  //   setPurchasing(true);
+  //   try {
+  //     const intentRes = await api.payments.createIntent({ pack_id: selectedPack.id });
+  //     const { client_secret, payment_intent_id } = intentRes.data;
+  //     const { error: initError } = await initPaymentSheet({
+  //       paymentIntentClientSecret: client_secret,
+  //       merchantDisplayName: 'Travorier',
+  //       defaultBillingDetails: {},
+  //     });
+  //     if (initError) throw new Error(initError.message);
+  //     const { error: presentError } = await presentPaymentSheet();
+  //     if (presentError) {
+  //       if (presentError.code !== 'Canceled') Alert.alert('Payment Failed', presentError.message);
+  //       return;
+  //     }
+  //     const { newBalance } = await purchaseCredits(selectedPack.id, payment_intent_id);
+  //     Alert.alert('Credits Added!', `${selectedPack.credits} credits added. New balance: ${newBalance}`, [{ text: 'OK', onPress: () => router.back() }]);
+  //   } catch (err: any) {
+  //     Alert.alert('Error', err.message || 'Something went wrong');
+  //   } finally {
+  //     setPurchasing(false);
+  //   }
+  // };
 
   const formatPrice = (paise: number) => `₹${(paise / 100).toFixed(0)}`;
 
@@ -234,16 +222,12 @@ export default function BuyCreditsScreen() {
           )}
         </TouchableOpacity>
 
-        {/* Fallback: Stripe (international cards) */}
-        <TouchableOpacity
-          style={[styles.stripeButton, (!selectedPack || purchasing) && styles.buyButtonDisabled]}
-          onPress={handlePurchaseStripe}
-          disabled={!selectedPack || purchasing}
-        >
+        {/* Stripe button halted — re-enable when Stripe goes live */}
+        {/* <TouchableOpacity style={[styles.stripeButton, (!selectedPack || purchasing) && styles.buyButtonDisabled]} onPress={handlePurchaseStripe} disabled={!selectedPack || purchasing}>
           <Text style={styles.stripeButtonText}>Pay with international card (Stripe)</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
-        <Text style={styles.secureNote}>Secured by Razorpay · Stripe</Text>
+        <Text style={styles.secureNote}>Secured by Razorpay</Text>
       </View>
     </SafeAreaView>
   );
