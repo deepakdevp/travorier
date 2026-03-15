@@ -41,11 +41,19 @@ export const colors = {
 
 // ─── Status Chip Tokens ───────────────────────────────────────────────────────
 export const statusColors = {
+  // Trip statuses
   active: { bg: '#dcfce7', text: '#16a34a' },
   matched: { bg: '#dbeafe', text: '#1d4ed8' },
   completed: { bg: '#f1f5f9', text: '#475569' },
   cancelled: { bg: '#f1f5f9', text: '#9ca3af' },
+  // Match statuses
   initiated: { bg: '#fef3c7', text: '#d97706' },
+  negotiating: { bg: '#fef3c7', text: '#d97706' },
+  agreed: { bg: '#dbeafe', text: '#1d4ed8' },
+  handover_scheduled: { bg: '#ede9fe', text: '#7c3aed' },
+  in_transit: { bg: '#fff7ed', text: '#c2410c' },
+  delivered: { bg: '#dcfce7', text: '#16a34a' },
+  disputed: { bg: '#fee2e2', text: '#dc2626' },
 } as const;
 
 // ─── Spacing (4px base grid) ──────────────────────────────────────────────────
